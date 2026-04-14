@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGE · Punto Fresco de Costa Rica S.A.</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* ── Extra shell styles ── */
+    .nav-label { flex: 1; }
+
+    .coming-soon {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      background: rgba(255,112,118,.2);
+      color: var(--coral);
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    /* Notification dropdown */
+    .notif-panel {
+      position: absolute;
+      top: calc(100% + .5rem);
+      right: 0;
+      width: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
+      display: none;
+    }
+    .notif-panel.open { display: block; }
+    .notif-header {
+      padding: .85rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: .88rem;
+      color: var(--navy);
+      display: flex;
+      justify-content: space-between;
+    }
+    .notif-item {
+      display: flex;
+      gap: .75rem;
+      padding: .75rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .82rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .notif-item:hover { background: var(--surface-alt); }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .notif-msg { color: var(--text-secondary); line-height: 1.5; }
+    .notif-msg strong { color: var(--text-primary); display: block; margin-bottom: 1px; }
+    .notif-time { font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🥬</div>
+      <div class="sidebar-logo-text">
+        <h1>SGE · Punto Fresco</h1>
+        <span>Costa Rica S.A.</span>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+
+      <div class="nav-section">
+        <div class="nav-section-label">General</div>
+        <div class="nav-item active" data-view="dashboard" onclick="SGE.Router.navigate('dashboard')">
+          <div class="nav-item-icon">🏠</div>
+          <span class="nav-label">Panel Principal</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Administración</div>
+        <div class="nav-item" data-view="administrativo" onclick="SGE.Router.navigate('administrativo')">
+          <div class="nav-item-icon">🏛️</div>
+          <span class="nav-label">Administrativo</span>
+        </div>
+        <div class="nav-item" data-view="roles" onclick="SGE.Router.navigate('roles')">
+          <div class="nav-item-icon">🔑</div>
+          <span class="nav-label">Roles</span>
+        </div>
+        <div class="nav-item" data-view="usuarios" onclick="SGE.Router.navigate('usuarios')">
+          <div class="nav-item-icon">👤</div>
+          <span class="nav-label">Usuarios</span>
+        </div>
+        <div class="nav-item" data-view="empleados" onclick="SGE.Router.navigate('empleados')">
+          <div class="nav-item-icon">👷</div>
+          <span class="nav-label">Empleados</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Comercial</div>
+        <div class="nav-item" data-view="clientes" onclick="SGE.Router.navigate('clientes')">
+          <div class="nav-item-icon">🏪</div>
+          <span class="nav-label">Clientes</span>
+        </div>
+        <div class="nav-item" data-view="proveedores" onclick="SGE.Router.navigate('proveedores')">
+          <div class="nav-item-icon">🚚</div>
+          <span class="nav-label">Proveedores</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Operaciones</div>
+        <div class="nav-item" data-view="compras" onclick="SGE.Router.navigate('compras')">
+          <div class="nav-item-icon">🛒</div>
+          <span class="nav-label">Compras</span>
+        </div>
+        <div class="nav-item" data-view="inventario" onclick="SGE.Router.navigate('inventario')">
+          <div class="nav-item-icon">📦</div>
+          <span class="nav-label">Inventario</span>
+        </div>
+        <div class="nav-item" data-view="pedidos" onclick="SGE.Router.navigate('pedidos')">
+          <div class="nav-item-icon">📋</div>
+          <span class="nav-label">Pedidos</span>
+        </div>
+        <div class="nav-item" data-view="licitaciones" onclick="SGE.Router.navigate('licitaciones')">
+          <div class="nav-item-icon">📑</div>
+          <span class="nav-label">Licitaciones</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Análisis</div>
+        <div class="nav-item" data-view="finanzas" onclick="SGE.Router.navigate('finanzas')">
+          <div class="nav-item-icon">💰</div>
+          <span class="nav-label">Finanzas</span>
+        </div>
+        <div class="nav-item" data-view="predicciones" onclick="SGE.Router.navigate('predicciones')">
+          <div class="nav-item-icon">🤖</div>
+          <span class="nav-label">Predicciones</span>
+        </div>
+        <div class="nav-item" data-view="reportes" onclick="SGE.Router.navigate('reportes')">
+          <div class="nav-item-icon">📊</div>
+          <span class="nav-label">Reportes</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="SGE.Toast.show('Perfil de usuario — próximamente', 'info')">
+        <div class="user-avatar">AM</div>
+        <div class="user-info">
+          <div class="user-name">Adrián Mora</div>
+          <div class="user-role">Administrador</div>
+        </div>
+        <span style="color:rgba(255,255,255,.35); font-size:.8rem;">⚙️</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="app-header">
+    <button class="header-btn" id="sidebar-toggle" style="display:none; margin-right:.25rem;">☰</button>
+
+    <div class="header-breadcrumb">
+      <span class="breadcrumb-parent">SGE</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Panel Principal</span>
+    </div>
+
+    <div class="header-actions">
+      <div style="position:relative;">
+        <button class="header-btn" id="notif-btn" onclick="toggleNotif()">
+          🔔
+          <span class="notif-dot"></span>
+        </button>
+        <div class="notif-panel" id="notif-panel">
+          <div class="notif-header">
+            Notificaciones
+            <span style="font-size:.72rem; color:var(--teal); font-weight:600;">3 nuevas</span>
+          </div>
+          <div class="notif-item">
+            <span class="notif-icon">⚠️</span>
+            <div class="notif-msg">
+              <strong>Stock bajo: Tomate Cherry</strong>
+              Quedan 8 unidades — mínimo requerido: 20.
+              <div class="notif-time">Hace 15 min</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <span class="notif-icon">📦</span>
+            <div class="notif-msg">
+              <strong>Orden de compra pendiente</strong>
+              Agro Tico S.A. — OC-2024-045 sin confirmar.
+              <div class="notif-time">Hace 1 hora</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <span class="notif-icon">💰</span>
+            <div class="notif-msg">
+              <strong>Pago próximo a vencer</strong>
+              Factura Distribuidora Nacional — ₡450,000 vence mañana.
+              <div class="notif-time">Hace 2 horas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="header-btn" title="Ayuda" onclick="SGE.Toast.show('Centro de ayuda — próximamente', 'info')">❓</button>
+
+      <a href="views/login.html" class="btn btn-ghost btn-sm" title="Cerrar sesión">
+        🚪 Salir
+      </a>
+    </div>
+  </header>
+
+  <!-- ══════════════ MAIN CONTENT ══════════════ -->
+  <main class="main-content" id="main-content">
+    <!-- Cargado por el router -->
+    <div style="display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--text-muted);">
+      <span style="font-size:1.5rem;">⏳</span>&nbsp; Cargando...
+    </div>
+  </main>
+
+</div>
+
+<!-- ══════════════ SCRIPTS ══════════════ -->
+<script src="js/app.js"></script>
+<script src="js/views.js"></script>
+<script src="js/views2.js"></script>
+<script src="js/views3.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    SGE.Modal.init();
+    initSidebar();
+
+    // Notifications toggle
+    window.toggleNotif = () => {
+      const panel = document.getElementById('notif-panel');
+      panel.classList.toggle('open');
+    };
+
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('notif-panel');
+      const btn   = document.getElementById('notif-btn');
+      if (!btn.contains(e.target) && !panel.contains(e.target)) {
+        panel.classList.remove('open');
+      }
+    });
+
+    // Load initial view
+    SGE.Router.navigate('dashboard');
+
+    // Show mobile toggle on small screens
+    const mediaQ = window.matchMedia('(max-width: 1024px)');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const applyMedia = (mq) => { toggleBtn.style.display = mq.matches ? 'flex' : 'none'; };
+    applyMedia(mediaQ);
+    mediaQ.addEventListener('change', applyMedia);
+  });
+</script>
+</body>
+</html>

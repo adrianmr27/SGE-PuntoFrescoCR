@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar Contraseña · SGE Punto Fresco</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .auth-panel { max-width: 460px; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .btn-w { width: 100%; justify-content: center; padding: .7rem; font-size: .95rem; border-radius: var(--radius-md); }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .84rem; margin-bottom: 1.75rem; transition: color .15s; }
+    .back-link:hover { color: var(--navy); }
+    .success-box { text-align: center; padding: 2rem 0; }
+    .success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .otp-row { display: flex; gap: .5rem; justify-content: center; margin: 1.25rem 0; }
+    .otp-inp { width: 48px; height: 56px; text-align: center; font-size: 1.3rem; font-weight: 700; border: 2px solid var(--border); border-radius: var(--radius-sm); color: var(--navy); outline: none; font-family: inherit; }
+    .otp-inp:focus { border-color: var(--teal); box-shadow: var(--shadow-glow); }
+  </style>
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-brand">
+    <div class="auth-brand-logo">
+      <div class="auth-brand-icon">🥬</div>
+      <div class="auth-brand-name">
+        <h1>SGE · Punto Fresco</h1>
+        <span>Sistema de Gestión Empresarial</span>
+      </div>
+    </div>
+    <div class="auth-brand-tagline">
+      <h2>Recuperación segura de acceso</h2>
+      <p>Le enviaremos un enlace de recuperación a su correo registrado para restablecer su contraseña de forma segura.</p>
+    </div>
+  </div>
+
+  <div class="auth-panel">
+    <!-- Step 1: Enter email -->
+    <div class="step active" id="step1">
+      <a href="login.html" class="back-link">← Volver al inicio de sesión</a>
+      <div class="auth-panel-header">
+        <h2>¿Olvidó su contraseña?</h2>
+        <p>Ingrese su correo electrónico y le enviaremos las instrucciones para recuperar su acceso.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico Registrado <span>*</span></label>
+          <input class="form-control" id="recover-email" type="email" placeholder="correo@puntofresco.cr">
+          <span class="form-hint">Usaremos el correo asociado a su cuenta de usuario.</span>
+        </div>
+        <button class="btn btn-primary btn-w" onclick="sendRecover()">📧 Enviar Instrucciones</button>
+        <div id="recover-error" style="display:none; background:var(--coral-light); border:1px solid rgba(255,112,118,.3); color:#c0464b; border-radius:var(--radius-sm); padding:.65rem .9rem; font-size:.84rem;">
+          ❌ No encontramos una cuenta con ese correo.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Token sent confirmation -->
+    <div class="step" id="step2">
+      <div class="success-box">
+        <div class="success-icon">📬</div>
+        <h2 style="font-size:1.35rem;font-weight:700;color:var(--navy);margin-bottom:.5rem;">Correo enviado</h2>
+        <p style="color:var(--text-secondary);font-size:.9rem;max-width:320px;margin:0 auto 1.5rem;">
+          Revise su bandeja de entrada. Le hemos enviado un enlace de recuperación válido por <strong>30 minutos</strong>.
+        </p>
+        <div style="background:var(--teal-light);border-radius:var(--radius-md);padding:1rem;margin-bottom:1.5rem;font-size:.84rem;color:#2ca892;">
+          <strong>¿No recibió el correo?</strong><br>
+          Revise su carpeta de spam o espere unos minutos.
+        </div>
+
+        <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Ingrese el código de 6 dígitos del correo:</p>
+        <div class="otp-row">
+          <input class="otp-inp" maxlength="1" oninput="moveOtp(this,null,'otp2')"> 
+          <input class="otp-inp" id="otp2" maxlength="1" oninput="moveOtp(this,'otp2','otp3')">
+          <input class="otp-inp" id="otp3" maxlength="1" oninput="moveOtp(this,'otp3','otp4')">
+          <input class="otp-inp" id="otp4" maxlength="1" oninput="moveOtp(this,'otp4','otp5')">
+          <input class="otp-inp" id="otp5" maxlength="1" oninput="moveOtp(this,'otp5','otp6')">
+          <input class="otp-inp" id="otp6" maxlength="1" oninput="moveOtp(this,'otp6',null)">
+        </div>
+        <button class="btn btn-primary btn-w" onclick="verifyToken()" style="max-width:280px;">✅ Verificar Código</button>
+        <br><br>
+        <button class="btn btn-ghost btn-w" style="max-width:280px;" onclick="goStep(1)">← Regresar</button>
+      </div>
+    </div>
+
+    <!-- Step 3: New password -->
+    <div class="step" id="step3">
+      <div class="auth-panel-header">
+        <h2>Nueva contraseña</h2>
+        <p>Establezca una contraseña segura para su cuenta.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Nueva Contraseña <span>*</span></label>
+          <input class="form-control" type="password" id="new-pass" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar Contraseña <span>*</span></label>
+          <input class="form-control" type="password" id="conf-pass" placeholder="Repita la contraseña">
+        </div>
+        <div style="background:var(--surface-alt);border-radius:var(--radius-sm);padding:.75rem;font-size:.78rem;color:var(--text-muted);">
+          La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo.
+        </div>
+        <button class="btn btn-success btn-w" onclick="resetPass()">🔐 Establecer Nueva Contraseña</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Success -->
+    <div class="step" id="step4">
+      <div class="success-box">
+        <div class="success-icon">✅</div>
+        <h2 style="font-size:1.35rem;font-weight:700;color:var(--navy);margin-bottom:.5rem;">¡Contraseña actualizada!</h2>
+        <p style="color:var(--text-secondary);font-size:.9rem;max-width:300px;margin:0 auto 2rem;">
+          Su contraseña fue restablecida exitosamente. Ya puede iniciar sesión con sus nuevas credenciales.
+        </p>
+        <a href="login.html" class="btn btn-primary btn-w" style="display:inline-flex;max-width:280px;text-decoration:none;justify-content:center;">🔐 Ir a Inicio de Sesión</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+  // Init switches
+  document.querySelectorAll('.switch-wrap').forEach(wrap => {
+    const sw = wrap.querySelector('.switch');
+    if (sw) wrap.addEventListener('click', () => sw.classList.toggle('on'));
+  });
+
+  function goStep(n) {
+    document.querySelectorAll('.step').forEach((s,i) => s.classList.toggle('active', i===n-1));
+  }
+
+  function sendRecover() {
+    const email = document.getElementById('recover-email').value.trim();
+    const err = document.getElementById('recover-error');
+    if (!email || !email.includes('@')) {
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    goStep(2);
+  }
+
+  function moveOtp(el, prevId, nextId) {
+    if (el.value && nextId) document.getElementById(nextId)?.focus();
+  }
+
+  function verifyToken() { goStep(3); }
+
+  function resetPass() {
+    const p1 = document.getElementById('new-pass').value;
+    const p2 = document.getElementById('conf-pass').value;
+    if (p1.length < 8) { alert('La contraseña debe tener al menos 8 caracteres'); return; }
+    if (p1 !== p2)     { alert('Las contraseñas no coinciden'); return; }
+    goStep(4);
+  }
+</script>
+</body>
+</html>
