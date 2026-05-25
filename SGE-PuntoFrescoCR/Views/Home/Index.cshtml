@@ -1,0 +1,186 @@
+@using System.Security.Claims
+@{
+    Layout = null;
+    var nombre = User.Identity?.Name ?? "Usuario";
+    var rol = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SGE Punto Fresco</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><i class="bi bi-briefcase-fill" aria-hidden="true"></i></div>
+      <div class="sidebar-logo-text">
+        <h1>Punto Fresco de Costa Rica</h1>
+        <span>Sistema de Gestión Empresarial</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">Principal</div>
+        <div class="nav-item active" data-view="dashboard" data-modulo="Dashboard" onclick="SGE.Router.navigate('dashboard')">
+          <span class="nav-item-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
+          <span class="nav-label">Panel Principal</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Administración</div>
+        <div class="nav-item" data-view="mi-perfil" data-modulo="Mi perfil" onclick="SGE.Router.navigate('mi-perfil')">
+          <span class="nav-item-icon"><i class="bi bi-person-circle" aria-hidden="true"></i></span>
+          <span class="nav-label">Mi perfil</span>
+        </div>
+        <div class="nav-item" data-view="administrativo" data-modulo="Administrativo" onclick="SGE.Router.navigate('administrativo')">
+          <span class="nav-item-icon"><i class="bi bi-building" aria-hidden="true"></i></span>
+          <span class="nav-label">Administrativo</span>
+        </div>
+        <div class="nav-item" data-view="roles" data-modulo="Roles" onclick="SGE.Router.navigate('roles')">
+          <span class="nav-item-icon"><i class="bi bi-key" aria-hidden="true"></i></span>
+          <span class="nav-label">Roles</span>
+        </div>
+        <div class="nav-item" data-view="usuarios" data-modulo="Usuarios" onclick="SGE.Router.navigate('usuarios')">
+          <span class="nav-item-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+          <span class="nav-label">Usuarios</span>
+        </div>
+        <div class="nav-item" data-view="empleados" data-modulo="Empleados" onclick="SGE.Router.navigate('empleados')">
+          <span class="nav-item-icon"><i class="bi bi-person-badge" aria-hidden="true"></i></span>
+          <span class="nav-label">Empleados</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Operaciones</div>
+        <div class="nav-item" data-view="clientes" data-modulo="Clientes" onclick="SGE.Router.navigate('clientes')">
+          <span class="nav-item-icon"><i class="bi bi-shop" aria-hidden="true"></i></span>
+          <span class="nav-label">Clientes</span>
+        </div>
+        <div class="nav-item" data-view="proveedores" data-modulo="Proveedores" onclick="SGE.Router.navigate('proveedores')">
+          <span class="nav-item-icon"><i class="bi bi-truck" aria-hidden="true"></i></span>
+          <span class="nav-label">Proveedores</span>
+        </div>
+        <div class="nav-item" data-view="compras" data-modulo="Compras" onclick="SGE.Router.navigate('compras')">
+          <span class="nav-item-icon"><i class="bi bi-cart3" aria-hidden="true"></i></span>
+          <span class="nav-label">Compras</span>
+        </div>
+        <div class="nav-item" data-view="inventario" data-modulo="Inventario" onclick="SGE.Router.navigate('inventario')">
+          <span class="nav-item-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+          <span class="nav-label">Inventario</span>
+        </div>
+        <div class="nav-item" data-view="pedidos" data-modulo="Pedidos" onclick="SGE.Router.navigate('pedidos')">
+          <span class="nav-item-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+          <span class="nav-label">Pedidos</span>
+        </div>
+        <div class="nav-item" data-view="licitaciones" data-modulo="Licitaciones" onclick="SGE.Router.navigate('licitaciones')">
+          <span class="nav-item-icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span>
+          <span class="nav-label">Licitaciones</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Análisis</div>
+        <div class="nav-item" data-view="finanzas" data-modulo="Finanzas" onclick="SGE.Router.navigate('finanzas')">
+          <span class="nav-item-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
+          <span class="nav-label">Finanzas</span>
+        </div>
+        <div class="nav-item" data-view="predicciones" data-modulo="Predicciones" onclick="SGE.Router.navigate('predicciones')">
+          <span class="nav-item-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span>
+          <span class="nav-label">Predicciones</span>
+        </div>
+        <div class="nav-item" data-view="reportes" data-modulo="Reportes" onclick="SGE.Router.navigate('reportes')">
+          <span class="nav-item-icon"><i class="bi bi-pie-chart" aria-hidden="true"></i></span>
+          <span class="nav-label">Reportes</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a class="sidebar-user" asp-controller="Account" asp-action="Logout" title="Cerrar sesión" style="text-decoration:none;color:inherit;">
+        <div class="user-avatar">@(nombre.Length > 0 ? nombre.Trim()[0] : '?')</div>
+        <div class="user-info">
+          <div class="user-name">@nombre</div>
+          <div class="user-role">@(string.IsNullOrEmpty(rol) ? "—" : rol)</div>
+        </div>
+      </a>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+    <header class="app-header">
+      <button type="button" class="header-btn" id="sidebar-toggle" aria-label="Abrir menú"><i class="bi bi-list" style="font-size:1.25rem;" aria-hidden="true"></i></button>
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-parent">SGE</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">Panel Principal</span>
+      </div>
+      <div class="header-actions">
+        @if (User.Identity?.IsAuthenticated ?? false)
+        {
+                        <div class="header-notif-wrap">
+                          <button type="button" class="header-btn header-notif-btn" id="header-notif-btn" aria-label="Notificaciones" title="Notificaciones">
+                            <i class="bi bi-bell" aria-hidden="true"></i>
+                            <span class="header-notif-badge" id="header-notif-count" hidden>0</span>
+                          </button>
+                          <div class="notif-dropdown" id="notif-dropdown" role="menu" aria-hidden="true">
+                            <div class="notif-dropdown-head">
+                              <span class="notif-dropdown-title">Notificaciones</span>
+                              <button type="button" class="btn btn-ghost btn-sm" id="notif-clear-dismissed" title="Mostrar todas de nuevo">Restablecer</button>
+                            </div>
+                            <div class="notif-dropdown-body" id="notif-dropdown-body"></div>
+                          </div>
+                        </div>
+                        <a class="logout-btn" asp-controller="Account" asp-action="Logout" title="Cerrar sesión">
+                            <i class="bi bi-box-arrow-right logout-icon" aria-hidden="true"></i>
+                            <span>Cerrar sesión</span>
+                        </a>
+                    }
+        else
+        {
+            <span style="font-size:.8rem;color:var(--text-muted);">Punto Fresco CR</span>
+        }
+      </div>
+    </header>
+
+    <main id="main-content" class="main-content"></main>
+  </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/app.js" asp-append-version="true"></script>
+    <script src="~/js/core/exports.js" asp-append-version="true"></script>
+    <script src="~/js/core/notifications.js" asp-append-version="true"></script>
+    <script src="~/js/services/httpClient.js" asp-append-version="true"></script>
+    <script src="~/js/core/validation.js" asp-append-version="true"></script>
+    <script src="~/js/services/spaService.js" asp-append-version="true"></script>
+    <!-- Sprint 1 Adrián -->
+    <script src="~/js/modules/administrativo.js" asp-append-version="true"></script>
+    <script src="~/js/modules/dashboard.js" asp-append-version="true"></script>
+
+<script>
+  window.SGE_CURRENT_USER_ID = @(int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var __uid) ? __uid : 0);
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    SGE.Modal.init();
+    SGE.initSidebar();
+    if (typeof SGE.Notifications?.init === 'function') SGE.Notifications.init();
+    const ok = await SGE.Api.loadBootstrap();
+    if (ok) {
+      SGE.applyPermissions();
+      let start = 'dashboard';
+      try {
+        const saved = sessionStorage.getItem(SGE.VIEW_SESSION_KEY || 'sge_spa_view');
+        if (saved && typeof SGE.canAccessView === 'function' && SGE.canAccessView(saved)) start = saved;
+      } catch (_) { /* ignore */ }
+      await SGE.Router.navigate(start);
+    }
+  });
+</script>
+</body>
+</html>

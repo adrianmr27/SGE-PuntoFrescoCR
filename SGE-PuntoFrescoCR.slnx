@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SGE-PuntoFrescoCR/SGE-PuntoFrescoCR.csproj" />
+  <Project Path="SGE-PuntoFrescoCRBLL/SGE-PuntoFrescoCRBLL.csproj" />
+  <Project Path="SGE-PuntoFrescoCRDAL/SGE-PuntoFrescoCRDAL.csproj" />
+</Solution>
