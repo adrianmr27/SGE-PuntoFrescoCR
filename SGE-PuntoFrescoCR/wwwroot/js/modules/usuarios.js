@@ -25,6 +25,16 @@ SGE.Router.register('usuarios', () => `
     <option value="">Todos los estados</option>
     <option>Activo</option><option>Inactivo</option>
   </select>
+  <select class="sort-select" data-table="usuarios-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="1:asc:text">Nombre A → Z</option>
+    <option value="1:desc:text">Nombre Z → A</option>
+    <option value="0:asc:number">ID ascendente</option>
+    <option value="0:desc:number">ID descendente</option>
+    <option value="3:asc:text">Rol A → Z</option>
+    <option value="5:desc:date">Último acceso más reciente</option>
+    <option value="5:asc:date">Último acceso más antiguo</option>
+  </select>
 </div>
 
 <div class="card">
@@ -54,7 +64,6 @@ SGE.Router.register('usuarios', () => `
             <td>
               <div class="flex gap-1">
                 ${SGE.hasPerm('USUARIOS', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Usu.edit(${u.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>` : ''}
-                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Restablecer contraseña" onclick="SGE.Toast.show('Use Recuperar contraseña en la pantalla de inicio de sesión con su correo','info')"><i class="bi bi-key" aria-hidden="true"></i></button>
                 ${SGE.hasPerm('USUARIOS', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="${u.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Usu.toggleActivo(${u.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>` : ''}
               </div>
             </td>
@@ -105,9 +114,11 @@ SGE.Router.register('usuarios', () => `
             ${SGE.DB.roles.filter(r=>r.estado==='Activo').map(r=>`<option value="${r.id}">${r.nombre}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Contraseña <span>*</span></label>
-          <input class="form-control" id="u-pass" type="password" placeholder="Mínimo 8 caracteres">
+        <div class="form-group col-span-2" id="u-pass-info">
+          <div class="info-banner" style="background:rgba(93,210,188,.1);border:1px solid rgba(93,210,188,.3);border-radius:var(--radius-sm);padding:.75rem .9rem;font-size:.84rem;color:var(--navy);">
+            <i class="bi bi-envelope-check me-1" aria-hidden="true"></i>
+            Se generará una <strong>contraseña temporal</strong> y se enviará al correo del usuario. El administrador no verá ni almacena la contraseña.
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Puesto</label>
@@ -164,7 +175,9 @@ SGE.Usu = {
     window._usuEditId = null;
     const t = document.getElementById('u-modal-title');
     if (t) t.innerHTML = '<i class="bi bi-person me-1" aria-hidden="true"></i>Nuevo Usuario';
-    ['u-nombre','u-ident','u-usuario','u-email','u-pass','u-puesto','u-tel','u-dir','u-emerg-nombre','u-emerg-tel','u-alerg'].forEach(id => {
+    const passInfo = document.getElementById('u-pass-info');
+    if (passInfo) passInfo.style.display = '';
+    ['u-nombre','u-ident','u-usuario','u-email','u-puesto','u-tel','u-dir','u-emerg-nombre','u-emerg-tel','u-alerg'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -180,12 +193,13 @@ SGE.Usu = {
     if (!u) return;
     window._usuEditId = id;
     document.getElementById('u-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Usuario — ${u.nombre}`;
+    const passInfo = document.getElementById('u-pass-info');
+    if (passInfo) passInfo.style.display = 'none';
     document.getElementById('u-nombre').value = u.nombre;
     document.getElementById('u-ident').value = u.identificacion || '';
     document.getElementById('u-usuario').value = u.usuario;
     document.getElementById('u-email').value = u.correo;
     document.getElementById('u-rol').value = String(u.rol_id);
-    document.getElementById('u-pass').value = '';
     document.getElementById('u-puesto').value = u.puesto || '';
     document.getElementById('u-tel').value = u.telefono || '';
     document.getElementById('u-dir').value = u.direccion || '';
@@ -235,7 +249,6 @@ SGE.Usu = {
     const usuario = document.getElementById('u-usuario')?.value.trim();
     const correo = document.getElementById('u-email')?.value.trim();
     const rolId = parseInt(document.getElementById('u-rol')?.value || '0', 10);
-    const pass = document.getElementById('u-pass')?.value || '';
     const areaSel = document.getElementById('u-area')?.value || '';
     const areaId = areaSel ? parseInt(areaSel, 10) : null;
     if (!nombre || !ident || !usuario || !correo || !rolId) {
@@ -255,9 +268,6 @@ SGE.Usu = {
     if (emergTel && !SGE.Validate.telefono(emergTel)) {
       SGE.Toast.show('El teléfono de emergencia no es válido', 'error'); return;
     }
-    if (!window._usuEditId && pass.length < 4) {
-      SGE.Toast.show('Indique una contraseña', 'error'); return;
-    }
     const hr = {
       areaId: areaId && areaId > 0 ? areaId : null,
       contactoEmergenciaNombre: document.getElementById('u-emerg-nombre')?.value?.trim() || null,
@@ -270,7 +280,6 @@ SGE.Usu = {
       identificacion: ident,
       nombreUsuario: usuario,
       correo,
-      password: pass,
       puesto: document.getElementById('u-puesto')?.value || null,
       telefono: document.getElementById('u-tel')?.value || null,
       direccion: document.getElementById('u-dir')?.value || null,
@@ -278,7 +287,8 @@ SGE.Usu = {
       ...hr
     };
     try {
-      if (window._usuEditId) {
+      const wasEdit = window._usuEditId;
+      if (wasEdit) {
         const payload = {
           rolId,
           nombreCompleto: nombre,
@@ -291,15 +301,14 @@ SGE.Usu = {
           activo: body.activo,
           ...hr
         };
-        if (pass) payload.password = pass;
-        await SGE.Api.mutations.putUsuario(window._usuEditId, payload);
+        await SGE.Api.mutations.putUsuario(wasEdit, payload);
       } else {
         await SGE.Api.mutations.postUsuario(body);
       }
       SGE.Modal.close('modal-usuario');
       window._usuEditId = null;
       await SGE.Api.reloadAfterMutation();
-      SGE.Toast.show('Usuario guardado');
+      SGE.Toast.show(wasEdit ? 'Usuario guardado' : 'Usuario creado. Se envió la contraseña temporal al correo registrado.');
       SGE.Router.navigate('dashboard');
       setTimeout(() => SGE.Router.navigate('usuarios'), 50);
     } catch (e) {

@@ -54,6 +54,7 @@ public class Usuario
     public string? Telefono { get; set; }
     public string? Direccion { get; set; }
     public bool Activo { get; set; }
+    public bool RequiereCambioPassword { get; set; }
     public string? TokenRecuperacion { get; set; }
     public DateTime? TokenExpiracion { get; set; }
     public DateTime? UltimoAcceso { get; set; }

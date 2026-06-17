@@ -140,6 +140,28 @@ SGE.Router.register('administrativo', () => {
 
   <!-- Tab: Parámetros -->
   <div class="tab-panel" id="tab-params">
+    <div class="filter-bar" style="margin-bottom:1rem;">
+      <div class="search-wrap">
+        <span class="search-icon"></span>
+        <input class="search-input" placeholder="Buscar parámetro..." data-table="params-table">
+      </div>
+      <select class="filter-select" data-table="params-table" data-col="4">
+        <option value="">Todos los estados</option>
+        <option>Activo</option><option>Inactivo</option>
+      </select>
+      <select class="filter-select" data-table="params-table" data-col="1">
+        <option value="">Todos los tipos</option>
+        ${[...new Set(SGE.DB.parametros.map(p=>p.tipo))].map(t=>`<option>${t}</option>`).join('')}
+      </select>
+      <select class="sort-select" data-table="params-table" title="Ordenar">
+        <option value="">Ordenar por...</option>
+        <option value="2:asc:text">Nombre A → Z</option>
+        <option value="2:desc:text">Nombre Z → A</option>
+        <option value="1:asc:text">Tipo A → Z</option>
+        <option value="0:asc:number">ID ascendente</option>
+        <option value="0:desc:number">ID descendente</option>
+      </select>
+    </div>
     <div class="card">
       <div class="card-header">
         <span class="card-title"><span class="card-title-icon card-title-icon-bi" style="background:rgba(93,210,188,.15)"><i class="bi bi-gear" aria-hidden="true"></i></span> Parámetros Generales</span>

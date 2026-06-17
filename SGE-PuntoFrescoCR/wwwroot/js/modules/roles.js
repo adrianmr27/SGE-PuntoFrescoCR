@@ -21,6 +21,15 @@ SGE.Router.register('roles', () => `
     <option value="">Todos los estados</option>
     <option>Activo</option><option>Inactivo</option>
   </select>
+  <select class="sort-select" data-table="roles-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="1:asc:text">Nombre A → Z</option>
+    <option value="1:desc:text">Nombre Z → A</option>
+    <option value="0:asc:number">ID ascendente</option>
+    <option value="0:desc:number">ID descendente</option>
+    <option value="4:desc:number">Más usuarios</option>
+    <option value="4:asc:number">Menos usuarios</option>
+  </select>
 </div>
 
 <div class="card">

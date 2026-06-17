@@ -21,6 +21,14 @@ SGE.Router.register('proveedores', () => `
     <option value="">Todos los estados</option>
     <option>Activo</option><option>Inactivo</option>
   </select>
+  <select class="sort-select" data-table="prov-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="1:asc:text">Empresa A → Z</option>
+    <option value="1:desc:text">Empresa Z → A</option>
+    <option value="0:asc:number">ID ascendente</option>
+    <option value="0:desc:number">ID descendente</option>
+    <option value="2:asc:text">Identificación ascendente</option>
+  </select>
 </div>
 
 <div class="card">
