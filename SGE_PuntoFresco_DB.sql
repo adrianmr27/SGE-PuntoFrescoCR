@@ -171,6 +171,7 @@ CREATE TABLE seg.Usuario (
     Telefono           NVARCHAR(20)   NULL,
     Direccion          NVARCHAR(300)  NULL,
     Activo             BIT            NOT NULL DEFAULT 1,
+    RequiereCambioPassword BIT        NOT NULL DEFAULT 0,
     -- Recuperación de contraseña [USR-003]
     TokenRecuperacion  NVARCHAR(256)  NULL,
     TokenExpiracion    DATETIME2      NULL,

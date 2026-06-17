@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SGE_PuntoFrescoCRDAL.Data;
 using SGE_PuntoFrescoCRDAL.Entidades;
+using System.Security.Cryptography;
 
 namespace SGE_PuntoFrescoCRBLL.Services;
 
@@ -65,6 +66,13 @@ public class AuthService
             await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<Usuario?> ObtenerUsuarioConRolAsync(int usuarioId, CancellationToken ct = default)
+    {
+        return await _db.Usuarios
+            .Include(u => u.Rol)
+            .FirstOrDefaultAsync(u => u.UsuarioId == usuarioId, ct);
+    }
+
     public async Task RegistrarAccesoAsync(int usuarioId, CancellationToken ct = default)
     {
         var u = await _db.Usuarios.FirstOrDefaultAsync(x => x.UsuarioId == usuarioId, ct);
@@ -98,8 +106,39 @@ public class AuthService
 
         u.PasswordHash = BCrypt.Net.BCrypt.HashPassword(nuevaPassword);
         u.PasswordSalt = u.PasswordHash;
+        u.RequiereCambioPassword = false;
         u.TokenRecuperacion = null;
         u.TokenExpiracion = null;
+        u.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>Genera una contraseña temporal segura para nuevos usuarios.</summary>
+    public static string GenerarPasswordTemporal()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
+        var bytes = new byte[12];
+        RandomNumberGenerator.Fill(bytes);
+        var result = new char[12];
+        for (var i = 0; i < 12; i++)
+            result[i] = chars[bytes[i] % chars.Length];
+        return new string(result);
+    }
+
+    /// <summary>Cambio obligatorio tras primer inicio con contraseña temporal.</summary>
+    public async Task<bool> CambiarPasswordObligatorioAsync(int usuarioId, string nuevaPassword, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(nuevaPassword) || nuevaPassword.Length < 8)
+            return false;
+
+        var u = await _db.Usuarios.FirstOrDefaultAsync(x => x.UsuarioId == usuarioId, ct);
+        if (u == null || !u.RequiereCambioPassword)
+            return false;
+
+        u.PasswordHash = BCrypt.Net.BCrypt.HashPassword(nuevaPassword);
+        u.PasswordSalt = u.PasswordHash;
+        u.RequiereCambioPassword = false;
         u.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         return true;

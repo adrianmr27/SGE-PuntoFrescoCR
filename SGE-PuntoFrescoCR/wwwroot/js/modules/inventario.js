@@ -69,6 +69,15 @@ ${alertas.length ? `
     <option value="">Todos los estados</option>
     <option>Activo</option><option>Inactivo</option>
   </select>
+  <select class="sort-select" data-table="inv-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="1:asc:text">Producto A → Z</option>
+    <option value="1:desc:text">Producto Z → A</option>
+    <option value="7:desc:number">Stock mayor a menor</option>
+    <option value="7:asc:number">Stock menor a mayor</option>
+    <option value="4:desc:number">Precio venta mayor</option>
+    <option value="0:asc:number">ID ascendente</option>
+  </select>
 </div>
 
 <div class="card">
@@ -94,7 +103,7 @@ ${alertas.length ? `
               <td style="font-weight:600;">${SGE.fmt.currency(p.precio_venta)}</td>
               <td><span class="badge badge-navy">${p.iva}</span></td>
               <td><span class="badge ${p.estado==='Activo'?'badge-active':'badge-inactive'}">${p.estado}</span></td>
-              <td style="${stockClass}">${stockIcon} ${p.stock} uds.</td>
+              <td style="${stockClass}" data-sort="${p.stock}">${stockIcon} ${p.stock} uds.</td>
               <td>
                 <div class="flex gap-1">
                   <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Inv.edit(${p.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
@@ -195,6 +204,14 @@ SGE.Router.register('inventario-movs', () => `
   </select>
   <input type="date" class="filter-select" id="movs-date-from" title="Fecha desde" oninput="SGE.Inv.filterMovs()">
   <input type="date" class="filter-select" id="movs-date-to" title="Fecha hasta" oninput="SGE.Inv.filterMovs()">
+  <select class="sort-select" data-table="movs-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="5:desc:date">Fecha más reciente</option>
+    <option value="5:asc:date">Fecha más antigua</option>
+    <option value="1:asc:text">Producto A → Z</option>
+    <option value="3:desc:number">Cantidad mayor a menor</option>
+    <option value="3:asc:number">Cantidad menor a mayor</option>
+  </select>
 </div>
 
 <div class="card">

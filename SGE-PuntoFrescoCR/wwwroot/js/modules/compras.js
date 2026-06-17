@@ -34,6 +34,15 @@ ${alertas.length ? `
     <option>Pendiente</option><option>Confirmada</option><option>Cancelada</option>
   </select>
   <input type="date" class="filter-select" id="compras-date-filter" title="Filtrar por fecha" onchange="SGE.Com.applyFilters()">
+  <select class="sort-select" data-table="compras-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="2:desc:date">Fecha más reciente</option>
+    <option value="2:asc:date">Fecha más antigua</option>
+    <option value="1:asc:text">Proveedor A → Z</option>
+    <option value="5:desc:number">Total mayor a menor</option>
+    <option value="5:asc:number">Total menor a mayor</option>
+    <option value="0:desc:number">Nº orden descendente</option>
+  </select>
   <button type="button" class="btn btn-outline btn-sm" onclick="SGE.Com.clearFilters()"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Limpiar</button>
 </div>
 
@@ -54,7 +63,7 @@ ${alertas.length ? `
               <td style="color:var(--text-muted);font-size:.82rem;">${SGE.fmt.date(c.fecha)}</td>
               <td><span class="badge ${estadoClass}">${c.estado}</span></td>
               <td><span class="badge badge-navy"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>${c.items}</span></td>
-              <td style="font-weight:700;color:var(--navy);">${SGE.fmt.currency(c.total)}</td>
+              <td style="font-weight:700;color:var(--navy);" data-sort="${c.total}">${SGE.fmt.currency(c.total)}</td>
               <td>
                 <div class="flex gap-1">
                   <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Ver detalle" onclick="SGE.Com.view(${oid})"><i class="bi bi-eye" aria-hidden="true"></i></button>

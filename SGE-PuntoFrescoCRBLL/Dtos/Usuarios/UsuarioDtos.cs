@@ -7,7 +7,6 @@ public class UsuarioCreateDto
     public string Identificacion { get; set; } = "";
     public string NombreUsuario { get; set; } = "";
     public string Correo { get; set; } = "";
-    public string Password { get; set; } = "";
     public string? Puesto { get; set; }
     public string? Telefono { get; set; }
     public string? Direccion { get; set; }
@@ -25,7 +24,6 @@ public class UsuarioUpdateDto
     public string Identificacion { get; set; } = "";
     public string NombreUsuario { get; set; } = "";
     public string Correo { get; set; } = "";
-    public string? Password { get; set; }
     public string? Puesto { get; set; }
     public string? Telefono { get; set; }
     public string? Direccion { get; set; }

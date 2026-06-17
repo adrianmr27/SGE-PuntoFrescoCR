@@ -8,8 +8,13 @@ namespace SGE_PuntoFrescoCRBLL.Services;
 public class SpaCrudService
 {
     private readonly SgePuntoFrescoDbContext _db;
+    private readonly IEmailNotificacionService _email;
 
-    public SpaCrudService(SgePuntoFrescoDbContext db) => _db = db;
+    public SpaCrudService(SgePuntoFrescoDbContext db, IEmailNotificacionService email)
+    {
+        _db = db;
+        _email = email;
+    }
 
     private static int OpUser(int usuarioId) => usuarioId <= 0 ? 1 : usuarioId;
 
@@ -173,14 +178,15 @@ public class SpaCrudService
 
     public async Task<int?> CreateUsuarioAsync(UsuarioCreateDto dto, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(dto.Password) || string.IsNullOrWhiteSpace(dto.NombreUsuario)) return null;
+        if (string.IsNullOrWhiteSpace(dto.NombreUsuario)) return null;
         var nu = dto.NombreUsuario.Trim();
         var ident = dto.Identificacion.Trim();
         var mail = dto.Correo.Trim();
         if (await _db.Usuarios.AnyAsync(u => u.NombreUsuario == nu || u.Identificacion == ident || u.Correo == mail, ct))
             return null;
 
-        var hash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        var tempPassword = AuthService.GenerarPasswordTemporal();
+        var hash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
         var u = new Usuario
         {
             RolId = dto.RolId,
@@ -194,6 +200,7 @@ public class SpaCrudService
             Telefono = dto.Telefono,
             Direccion = dto.Direccion,
             Activo = dto.Activo,
+            RequiereCambioPassword = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -207,7 +214,241 @@ public class SpaCrudService
             await _db.SaveChangesAsync(ct);
         }
 
+        await EnviarPasswordTemporalAsync(u, tempPassword, ct);
+
         return u.UsuarioId;
+    }
+
+    private async Task EnviarPasswordTemporalAsync(Usuario u, string tempPassword, CancellationToken ct)
+    {
+        
+var html = $@"
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<style>
+    body {{
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        background: #FAFBFE;
+        color: #2D3748;
+    }}
+
+    .container {{
+        max-width: 600px;
+        margin: 0 auto;
+    }}
+
+    .card {{
+        background: #FFFFFF;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(28, 34, 96, 0.15);
+        border: 1px solid rgba(28, 34, 96, 0.08);
+    }}
+
+    .header {{
+        background: linear-gradient(135deg, #1C2260 0%, #2A3180 100%);
+        padding: 40px 24px;
+        text-align: center;
+    }}
+
+    .logo {{
+        font-size: 26px;
+        font-weight: 700;
+        color: #FFFFFF;
+    }}
+
+    .logo-accent {{
+        color: #5DD2BC;
+    }}
+
+    .subtitle {{
+        color: rgba(255,255,255,0.9);
+        font-size: 14px;
+        margin-top: 8px;
+    }}
+
+    .content {{
+        padding: 40px 32px;
+    }}
+
+    .greeting {{
+        font-size: 26px;
+        font-weight: 700;
+        color: #1C2260;
+        margin-bottom: 20px;
+    }}
+
+    .message {{
+        color: #4A5568;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }}
+
+    .credentials {{
+        background: #FAFBFE;
+        border: 1px solid rgba(28, 34, 96, 0.08);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin: 24px 0;
+    }}
+
+    .credentials-label {{
+        color: #718096;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }}
+
+    .credentials-value {{
+        color: #1C2260;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }}
+
+    .password {{
+        display: inline-block;
+        background: #EDF2F7;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-family: Consolas, monospace;
+        font-size: 16px;
+        color: #1C2260;
+    }}
+
+    .warning {{
+        background: rgba(255, 112, 118, 0.08);
+        border-left: 4px solid #FF7076;
+        padding: 20px 24px;
+        border-radius: 16px;
+        margin-top: 24px;
+        color: #DC2626;
+        font-size: 14px;
+        line-height: 1.5;
+    }}
+
+    .footer {{
+        padding: 24px;
+        background: #FAFBFE;
+        text-align: center;
+        border-top: 1px solid rgba(28, 34, 96, 0.08);
+        color: #718096;
+        font-size: 12px;
+    }}
+
+    @media only screen and (max-width: 600px) {{
+        .content {{
+            padding: 28px 20px;
+        }}
+
+        .header {{
+            padding: 32px 20px;
+        }}
+
+        .greeting {{
+            font-size: 22px;
+        }}
+    }}
+</style>
+</head>
+
+<body>
+    <div class='container'>
+        <div class='card'>
+
+            <div class='header'>
+                <div class='logo'>
+                    SGE <span class='logo-accent'>Punto Fresco CR</span>
+                </div>
+
+                <div class='subtitle'>
+                    Sistema de Gestión Empresarial
+                </div>
+            </div>
+
+            <div class='content'>
+
+                <div class='greeting'>
+                    ¡Bienvenido!
+                </div>
+
+                <div class='message'>
+                    Hola <strong>{u.NombreCompleto}</strong>, tu cuenta ha sido creada exitosamente.
+                    Utiliza las siguientes credenciales para ingresar al sistema por primera vez:
+                </div>
+
+                <div class='credentials'>
+
+                    <div class='credentials-label'>
+                        Usuario
+                    </div>
+
+                    <div class='credentials-value'>
+                        {u.NombreUsuario}
+                    </div>
+
+                    <div class='credentials-label'>
+                        Contraseña temporal
+                    </div>
+
+                    <div class='password'>
+                        {tempPassword}
+                    </div>
+
+                </div>
+
+                <div class='warning'>
+                    <strong>🔒 Importante:</strong><br>
+                    Esta contraseña es temporal. Por motivos de seguridad,
+                    deberás cambiarla al iniciar sesión por primera vez.
+                </div>
+
+            </div>
+
+            <div class='footer'>
+                © 2026 SGE - Punto Fresco de Costa Rica.<br>
+                Este es un mensaje automático, por favor no responder a este correo.
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>";
+
+        var texto = $@"
+Bienvenido a SGE Punto Fresco CR
+
+Hola {u.NombreCompleto},
+
+Tu cuenta ha sido creada exitosamente. Utiliza las siguientes credenciales para iniciar sesión:
+
+Usuario: {u.NombreUsuario}
+Contraseña temporal: {tempPassword}
+
+Importante:
+Esta contraseña es temporal. Al iniciar sesión por primera vez deberás establecer una contraseña personal.
+
+Este es un mensaje automático, por favor no responder a este correo.
+";
+
+        try
+        {
+            await _email.EnviarAsync(
+                u.Correo,
+                "Acceso al sistema — Contraseña temporal — Punto Fresco CR",
+                texto,
+                html,
+                ct);
+        }
+        catch
+        {
+            // El usuario ya fue creado; el administrador puede usar recuperación por correo si falla el envío.
+        }
     }
 
     public async Task<bool> UpdateUsuarioAsync(int id, UsuarioUpdateDto dto, CancellationToken ct = default)
@@ -231,12 +472,6 @@ public class SpaCrudService
         u.Direccion = dto.Direccion;
         u.Activo = dto.Activo;
         u.UpdatedAt = DateTime.UtcNow;
-        if (!string.IsNullOrWhiteSpace(dto.Password))
-        {
-            var hash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-            u.PasswordHash = hash;
-            u.PasswordSalt = hash;
-        }
         await _db.SaveChangesAsync(ct);
 
         if (dto.AreaId is > 0)

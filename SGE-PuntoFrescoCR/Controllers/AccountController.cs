@@ -55,6 +55,74 @@ public class AccountController : Controller
             return View();
         }
 
+        await SignInUsuarioAsync(u, ct);
+
+        if (u.RequiereCambioPassword)
+            return RedirectToAction(nameof(ChangePassword));
+
+        await _auth.RegistrarAccesoAsync(u.UsuarioId, ct);
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        return RedirectToAction("Index", "Home");
+    }
+
+    [HttpGet]
+    [Authorize]
+    public IActionResult ChangePassword()
+    {
+        if (!User.HasClaim("requiere_cambio_password", "1"))
+            return RedirectToAction("Index", "Home");
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(
+        [FromForm] string nuevaPassword,
+        [FromForm] string confirmarPassword,
+        CancellationToken ct)
+    {
+        if (!User.HasClaim("requiere_cambio_password", "1"))
+            return RedirectToAction("Index", "Home");
+
+        if (string.IsNullOrWhiteSpace(nuevaPassword) || nuevaPassword.Length < 8)
+        {
+            ViewData["Error"] = "La contraseña debe tener al menos 8 caracteres.";
+            return View();
+        }
+
+        if (nuevaPassword != confirmarPassword)
+        {
+            ViewData["Error"] = "Las contraseñas no coinciden.";
+            return View();
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idStr, out var usuarioId))
+            return RedirectToAction(nameof(Login));
+
+        var ok = await _auth.CambiarPasswordObligatorioAsync(usuarioId, nuevaPassword, ct);
+        if (!ok)
+        {
+            ViewData["Error"] = "No se pudo actualizar la contraseña. Intente de nuevo.";
+            return View();
+        }
+
+        var u = await _auth.ObtenerUsuarioConRolAsync(usuarioId, ct);
+        if (u == null)
+            return RedirectToAction(nameof(Login));
+
+        await SignInUsuarioAsync(u, ct);
+        await _auth.RegistrarAccesoAsync(u.UsuarioId, ct);
+
+        return RedirectToAction("Index", "Home");
+    }
+
+    private async Task SignInUsuarioAsync(SGE_PuntoFrescoCRDAL.Entidades.Usuario u, CancellationToken ct)
+    {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, u.UsuarioId.ToString()),
@@ -64,17 +132,13 @@ public class AccountController : Controller
             new(ClaimTypes.Role, u.Rol.Nombre)
         };
 
+        if (u.RequiereCambioPassword)
+            claims.Add(new Claim("requiere_cambio_password", "1"));
+
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
-
-        await _auth.RegistrarAccesoAsync(u.UsuarioId, ct);
-
-        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            return Redirect(returnUrl);
-
-        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
@@ -528,7 +592,7 @@ Para crear una nueva contraseña, copia y pega el siguiente enlace en tu navegad
 Contacta a nuestro equipo de soporte: soporte@puntofresco.com
 
 ============================================
-© 2024 SGE - Punto Fresco de Costa Rica
+© 2026 SGE - Punto Fresco de Costa Rica
 Este es un mensaje automático, por favor no responder.
 ============================================";
 

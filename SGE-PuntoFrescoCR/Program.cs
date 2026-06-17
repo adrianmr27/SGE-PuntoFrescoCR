@@ -73,6 +73,30 @@ if (disableLogin)
 
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true &&
+        context.User.HasClaim("requiere_cambio_password", "1"))
+    {
+        var path = context.Request.Path.Value ?? "";
+        var allowed =
+            path.StartsWith("/Account/ChangePassword", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/Account/Logout", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/css/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/js/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/lib/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/favicon", StringComparison.OrdinalIgnoreCase);
+
+        if (!allowed)
+        {
+            context.Response.Redirect("/Account/ChangePassword");
+            return;
+        }
+    }
+
+    await next();
+});
+
 app.MapStaticAssets();
 
 if (disableLogin)

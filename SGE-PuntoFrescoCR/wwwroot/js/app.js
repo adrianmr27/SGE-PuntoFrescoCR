@@ -303,12 +303,85 @@ const initSearch = () => {
   });
 };
 
+const getTableSortValue = (row, colIndex, type) => {
+  const cell = row.cells[colIndex];
+  if (!cell) return type === 'number' || type === 'date' ? 0 : '';
+  const dataVal = cell.dataset.sort || row.dataset.sort;
+  const text = (dataVal || cell.textContent).trim();
+  if (type === 'number') {
+    const n = parseFloat(String(text).replace(/[^\d.,-]/g, '').replace(',', '.'));
+    return Number.isFinite(n) ? n : 0;
+  }
+  if (type === 'date') {
+    const fecha = row.getAttribute('data-fecha') || text;
+    if (!fecha || fecha === '—') return 0;
+    const t = Date.parse(fecha);
+    return Number.isFinite(t) ? t : 0;
+  }
+  return text.toLowerCase();
+};
+
+const sortTableRows = (tableId, colIndex, direction, type) => {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const dir = direction === 'desc' ? 'desc' : 'asc';
+  rows.sort((a, b) => {
+    const va = getTableSortValue(a, colIndex, type);
+    const vb = getTableSortValue(b, colIndex, type);
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+};
+
+const initTableSort = () => {
+  document.querySelectorAll('.sort-select[data-table]').forEach(sel => {
+    if (sel.dataset.init) return;
+    sel.dataset.init = '1';
+    sel.addEventListener('change', () => {
+      if (!sel.value) return;
+      const parts = sel.value.split(':');
+      if (parts.length < 3) return;
+      const col = parseInt(parts[0], 10);
+      const dir = parts[1];
+      const type = parts[2];
+      sortTableRows(sel.dataset.table, col, dir, type);
+    });
+  });
+
+  document.querySelectorAll('table[data-sortable] thead th[data-sort-col]').forEach(th => {
+    if (th.dataset.init) return;
+    th.dataset.init = '1';
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+      const table = th.closest('table');
+      if (!table?.id) return;
+      const col = parseInt(th.dataset.sortCol, 10);
+      const type = th.dataset.sortType || 'text';
+      const current = th.dataset.sortDir || '';
+      const dir = current === 'asc' ? 'desc' : 'asc';
+      table.querySelectorAll('thead th[data-sort-col]').forEach(h => {
+        h.dataset.sortDir = '';
+        h.classList.remove('sort-asc', 'sort-desc');
+      });
+      th.dataset.sortDir = dir;
+      th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+      sortTableRows(table.id, col, dir, type);
+    });
+  });
+};
+
 /* ── Per-view initializer ──────────────────────────── */
 const initView = (id) => {
   initSwitches();
   initTabs();
   initSearchIcons();
   initSearch();
+  initTableSort();
   hideUnauthorizedActions();
   // Dispatch custom event for per-view JS
   document.dispatchEvent(new CustomEvent('view:ready', { detail: { view: id } }));
@@ -362,7 +435,7 @@ const DB = {
   reportes: {}
 };
 
-window.SGE = { Router, Modal, Toast, DB, fmt, initView, initSidebar, canAccessView, hideUnauthorizedActions, loadPartialView, VIEW_SESSION_KEY };
+window.SGE = { Router, Modal, Toast, DB, fmt, initView, initSidebar, canAccessView, hideUnauthorizedActions, loadPartialView, VIEW_SESSION_KEY, sortTableRows };
 // Aplica permisos de rol: bloquea módulos sin permiso (visible pero no clickeable)
 SGE.applyPermissions = function () {
   try {
