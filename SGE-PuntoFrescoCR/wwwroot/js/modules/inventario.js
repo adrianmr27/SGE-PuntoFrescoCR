@@ -223,7 +223,7 @@ SGE.Router.register('inventario-movs', () => `
         </tr></thead>
         <tbody>
           ${SGE.DB.movimientos.map(m => `
-          <tr class="movement-row mov-row-click" style="cursor:pointer;" role="button" tabindex="0" title="Ver detalle"
+          <tr class="mov-row mov-row-click" style="cursor:pointer;" role="button" tabindex="0" title="Ver detalle"
             data-tipo="${m.tipo}" data-fecha="${m.fecha}" data-mov-id="${m.id}"
             onclick="SGE.Inv.openMovDetalle(${m.id})"
             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();SGE.Inv.openMovDetalle(${m.id});}">
