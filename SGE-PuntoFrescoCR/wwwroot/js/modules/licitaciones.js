@@ -65,6 +65,15 @@ ${proxFechas.length ? `
   </select>
   <input type="date" class="filter-select" id="lic-date-from" title="Fecha desde" onchange="SGE.Lic.applyFilters()">
   <input type="date" class="filter-select" id="lic-date-to" title="Fecha hasta" onchange="SGE.Lic.applyFilters()">
+  <select class="sort-select" data-table="lic-table" title="Ordenar">
+    <option value="">Ordenar por...</option>
+    <option value="1:asc:text">Institución A → Z</option>
+    <option value="1:desc:text">Institución Z → A</option>
+    <option value="4:desc:date">Fecha oferta más reciente</option>
+    <option value="4:asc:date">Fecha oferta más antigua</option>
+    <option value="5:desc:number">Monto oferta mayor a menor</option>
+    <option value="5:asc:number">Monto oferta menor a mayor</option>
+  </select>
 </div>
 
 <div class="card">
@@ -92,7 +101,7 @@ ${proxFechas.length ? `
               <td style="font-size:.82rem;">
                 ${SGE.fmt.date(l.fecha_oferta)}${alerta}
               </td>
-              <td style="font-weight:700;color:var(--navy);">${SGE.fmt.currency(l.total)}</td>
+              <td style="font-weight:700;color:var(--navy);" data-sort="${l.total}">${SGE.fmt.currency(l.total)}</td>
               <td>
                 <div class="flex gap-1">
                   <button class="btn btn-ghost btn-sm btn-icon" title="Ver detalle" onclick="SGE.Lic.view('${l.id}')"><i class="bi bi-eye" aria-hidden="true"></i></button>
