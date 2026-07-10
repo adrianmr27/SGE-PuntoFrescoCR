@@ -64,6 +64,18 @@ SGE.Router.register('pedidos', () => `
   <label class="filter-select" style="display:flex;align-items:center;gap:.45rem;cursor:pointer;white-space:nowrap;font-size:.82rem;border:none;background:transparent;padding:.35rem .5rem;">
     <input type="checkbox" id="ped-solo-logistica" onchange="SGE.Ped.applyFilters()"> Solo confirmados (logística)
   </label>
+  <!--sprint3vvega-->
+  <select class="filter-select" id="ped-sort" title="Ordenar" onchange="SGE.Ped.applyFilters()">
+    <option value="">Ordenar por...</option>
+    <option value="fecha:desc">Fecha más reciente</option>
+    <option value="fecha:asc">Fecha más antigua</option>
+    <option value="id:desc">Nº Pedido descendente</option>
+    <option value="id:asc">Nº Pedido ascendente</option>
+    <option value="cliente:asc">Cliente A → Z</option>
+    <option value="cliente:desc">Cliente Z → A</option>
+    <option value="total:desc">Total mayor a menor</option>
+    <option value="total:asc">Total menor a mayor</option>
+  </select>
 </div>
 
 <div class="card">
@@ -78,7 +90,7 @@ SGE.Router.register('pedidos', () => `
             const eCls = { Borrador:'badge-pending', Confirmado:'badge-active', Entregado:'badge-info', Cancelado:'badge-danger' }[p.estado] || 'badge-navy';
             const estadoLbl = p.estado === 'Borrador' ? 'Borrador (pendiente)' : p.estado;
             const pid = p.pedido_id;
-            return `<tr data-fecha="${p.fecha}" data-estado="${p.estado}">
+            return `<tr data-fecha="${p.fecha}" data-estado="${p.estado}" data-id="${pid}" data-total="${p.total}" data-cliente="${(p.cliente || '').replace(/"/g, '&quot;')}">
               <td><code style="background:var(--surface-alt);padding:2px 7px;border-radius:4px;font-size:.8rem;font-weight:700;">${p.id}</code></td>
               <td class="td-name">${p.cliente}</td>
               <td><span class="badge ${eCls}">${estadoLbl}</span></td>
@@ -563,14 +575,43 @@ SGE.Ped = {
     }
   },
 
-  applyFilters: () => {
-    const table = document.getElementById('pedidos-table');
-    if (!table) return;
-    const q = (document.getElementById('pedidos-search')?.value || '').toLowerCase().trim();
-    const est = document.getElementById('ped-estado-filter')?.value || '';
-    const f = document.getElementById('pedidos-date-filter')?.value || '';
-    const soloConf = !!document.getElementById('ped-solo-logistica')?.checked;
-    table.querySelectorAll('tbody tr').forEach((tr) => {
+    applyFilters: () => {
+        const table = document.getElementById('pedidos-table');
+        if (!table) return;
+        const tbody = table.querySelector('tbody');
+        const q = (document.getElementById('pedidos-search')?.value || '').toLowerCase().trim();
+        const est = document.getElementById('ped-estado-filter')?.value || '';
+        const f = document.getElementById('pedidos-date-filter')?.value || '';
+        const soloConf = !!document.getElementById('ped-solo-logistica')?.checked;
+        const sortVal = document.getElementById('ped-sort')?.value || '';
+
+        if (sortVal && tbody) {
+            const [campo, dir] = sortVal.split(':');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort((a, b) => {
+                let va, vb;
+                if (campo === 'fecha') {
+                    va = new Date(a.dataset.fecha).getTime() || 0;
+                    vb = new Date(b.dataset.fecha).getTime() || 0;
+                } else if (campo === 'total') {
+                    va = parseFloat(a.dataset.total) || 0;
+                    vb = parseFloat(b.dataset.total) || 0;
+                } else if (campo === 'id') {
+                    va = parseInt(a.dataset.id, 10) || 0;
+                    vb = parseInt(b.dataset.id, 10) || 0;
+                } else if (campo === 'cliente') {
+                    va = (a.dataset.cliente || '').toLowerCase();
+                    vb = (b.dataset.cliente || '').toLowerCase();
+                } else {
+                    va = 0; vb = 0;
+                }
+                if (va < vb) return dir === 'asc' ? -1 : 1;
+                if (va > vb) return dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            rows.forEach((r) => tbody.appendChild(r));
+        }
+      table.querySelectorAll('tbody tr').forEach((tr) => {
       const estado = tr.dataset.estado || '';
       const texto = tr.textContent.toLowerCase();
       const okSearch = !q || texto.includes(q);
