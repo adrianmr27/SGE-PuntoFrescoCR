@@ -45,6 +45,9 @@
 
   --transition: .2s cubic-bezier(.4,0,.2,1);
   --transition-slow: .4s cubic-bezier(.4,0,.2,1);
+
+  /* Por encima de modales (.modal-overlay: 10050) y toasts (.toast-container: 10100) */
+  --swal2-z-index: 10200;
 }
 
 /* ── Reset & Base ──────────────────────────────────── */
@@ -978,6 +981,11 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 .toast.success { border-left: 3px solid var(--green); }
 .toast.error   { border-left: 3px solid var(--coral); }
 .toast.info    { border-left: 3px solid var(--teal); }
+
+/* SweetAlert2: debe quedar por encima de los modales de la app */
+.swal2-container {
+  z-index: var(--swal2-z-index, 10200) !important;
+}
 
 /* ── Toggle / Switch ───────────────────────────────── */
 .switch-wrap {
