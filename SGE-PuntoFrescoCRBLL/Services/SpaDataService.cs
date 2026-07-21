@@ -210,6 +210,8 @@ public class SpaDataService
         var peds = await _db.Pedidos.AsNoTracking()
             .Include(p => p.Cliente)
             .Include(p => p.Detalles)
+            .ThenInclude(d => d.Producto)
+            .ThenInclude(pr => pr.Categoria)
             .OrderByDescending(p => p.PedidoId)
             .ToListAsync(ct);
 
@@ -223,7 +225,14 @@ public class SpaDataService
                 Fecha = p.FechaPedido.ToString("yyyy-MM-dd"),
                 Total = p.Total,
                 Estado = p.Estado,
-                Items = p.Detalles.Count
+                Items = p.Detalles.Count,
+                Lineas = p.Detalles.Select(d => new PedidoLineaClienteDto
+                {
+                    Producto = d.Producto.Nombre,
+                    Categoria = d.Producto.Categoria?.Nombre ?? "—",
+                    Cantidad = d.Cantidad,
+                    Total = d.Total
+                }).ToList()
             });
         }
 
@@ -487,9 +496,8 @@ public class SpaDataService
 
     private async Task<Dictionary<string, List<HistorialMesDto>>> BuildHistorialClientesAsync(CancellationToken ct)
     {
-        var desde = DateTime.UtcNow.AddMonths(-12).Date;
         var pedidos = await _db.Pedidos.AsNoTracking()
-            .Where(p => p.FechaPedido >= desde && p.Estado != "Cancelado")
+            .Where(p => p.Estado != "Cancelado")
             .Include(p => p.Cliente)
             .Include(p => p.Detalles)
             .ThenInclude(d => d.Producto)

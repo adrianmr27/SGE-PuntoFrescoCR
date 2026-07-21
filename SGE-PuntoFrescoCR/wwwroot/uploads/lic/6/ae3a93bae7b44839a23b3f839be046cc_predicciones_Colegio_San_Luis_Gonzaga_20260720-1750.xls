@@ -1,0 +1,11 @@
+﻿<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="utf-8"><title>Predicciones — Colegio San Luis Gonzaga</title>
+<style>
+  table { border-collapse: collapse; }
+  th, td { border: 1px solid #94a3b8; padding: 6px 8px; font-size: 11px; }
+  th { background: #1e3a5f; color: #fff; font-weight: 600; }
+</style></head><body>
+  <h2 style="font-family:Segoe UI,sans-serif;color:#1C2260;">Predicciones — Colegio San Luis Gonzaga</h2>
+  <p style="font-family:Segoe UI,sans-serif;font-size:11px;color:#64748b;">20/7/2026, 5:50:59 p. m.</p>
+  <div class="section"><h2>Historial mensual</h2><table><thead><tr><th>Cliente</th><th>Mes</th><th>Total CRC</th><th>Productos</th></tr></thead><tbody><tr><td>Colegio San Luis Gonzaga</td><td>2026-04</td><td class="num">54240.00</td><td>Queso Gouda</td></tr></tbody></table></div><div class="section"><h2>Modelo PrediccionCompra</h2><table><thead><tr><th>Producto</th><th>Veces pedido</th><th>Prob. %</th><th>Confianza</th><th>Prom. u.</th></tr></thead><tbody><tr><td>Arroz Integral</td><td class="num">1</td><td>100</td><td>Alta</td><td>80</td></tr><tr><td>Yogurt Natural</td><td class="num">1</td><td>100</td><td>Alta</td><td>30</td></tr><tr><td>Queso Gouda</td><td class="num">2</td><td>11.76</td><td>Baja</td><td>9</td></tr></tbody></table></div>
+</body></html>

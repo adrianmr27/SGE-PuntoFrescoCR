@@ -127,7 +127,13 @@ function mapBootstrap(data) {
       fecha: p.fecha,
       total: p.total,
       estado: p.estado,
-      items: p.items
+      items: p.items,
+      lineas: (p.lineas || []).map(l => ({
+        producto: l.producto,
+        categoria: l.categoria,
+        cantidad: l.cantidad,
+        total: l.total
+      }))
     })),
     licitaciones: (d.licitaciones || []).map(l => ({
       licitacion_id: l.licitacionId,
