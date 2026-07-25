@@ -194,6 +194,24 @@ SGE.Router.register('pedidos', () => `
     </div>
   </div>
 </div>
+
+<!-- Modal Cancelar Pedido (motivo) -->
+<div class="modal-overlay" id="modal-pedido-cancel">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar Pedido</span>
+      <button type="button" class="modal-close" aria-label="Cerrar"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.9rem;color:var(--text-muted);margin-bottom:.75rem;">Ingrese el motivo de la cancelación (opcional):</div>
+      <textarea id="ped-cancel-motivo" class="form-control" rows="4" style="min-height:80px;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+      <button type="button" class="btn btn-danger" onclick="SGE.Ped.cancelarConfirmado()"><i class="bi bi-x-lg me-1" aria-hidden="true"></i>Confirmar cancelación</button>
+    </div>
+  </div>
+</div>
 `);
 
 SGE.Router.register('pedidos-analytics', () => `
@@ -526,16 +544,32 @@ SGE.Ped = {
       SGE.Toast.show(e.message || 'No se pudo marcar como entregado', 'error');
     }
   },
+  // Id del pedido que se está cancelando (si hay modal abierto)
+  _cancelPedidoId: null,
 
   cancel: async (pedidoId) => {
-    const motivo = window.prompt('Motivo de cancelación (opcional):', '') || '';
+    // Abrir modal consistente con el resto de la UI para ingresar motivo
+    SGE.Ped._cancelPedidoId = pedidoId;
+    const motivoEl = document.getElementById('ped-cancel-motivo');
+    if (motivoEl) motivoEl.value = '';
+    SGE.Modal.open('modal-pedido-cancel');
+  },
+
+  // Ejecuta la cancelación tras confirmar en el modal
+  cancelarConfirmado: async () => {
+    const pedidoId = SGE.Ped._cancelPedidoId;
+    if (!pedidoId) { SGE.Toast.show('No hay pedido seleccionado', 'error'); return; }
+    const motivo = document.getElementById('ped-cancel-motivo')?.value || '';
     try {
       await SGE.Api.mutations.cancelarPedido(pedidoId, motivo);
       await SGE.Api.reloadAfterMutation();
-      SGE.Toast.show('Pedido cancelado', 'error');
+      SGE.Modal.close('modal-pedido-cancel');
+      SGE.Toast.show('Pedido cancelado', 'success');
       SGE.Router.navigate('pedidos');
     } catch (e) {
       SGE.Toast.show(e.message || 'No se pudo cancelar', 'error');
+    } finally {
+      SGE.Ped._cancelPedidoId = null;
     }
   },
 
