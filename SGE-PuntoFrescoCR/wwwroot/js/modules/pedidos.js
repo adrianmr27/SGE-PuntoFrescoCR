@@ -17,35 +17,35 @@ SGE.Router.register('pedidos', () => `
   <div class="stat-card">
     <div class="stat-icon navy stat-icon-bi"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></div>
     <div class="stat-info">
-      <div class="stat-val">${SGE.DB.pedidos.filter(p=>p.estado==='Borrador').length}</div>
+      <div class="stat-val">${SGE.DB.pedidos.filter(p => p.estado === 'Borrador').length}</div>
       <div class="stat-lbl">Borradores</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon green stat-icon-bi"><i class="bi bi-check-circle" aria-hidden="true"></i></div>
     <div class="stat-info">
-      <div class="stat-val">${SGE.DB.pedidos.filter(p=>p.estado==='Confirmado').length}</div>
+      <div class="stat-val">${SGE.DB.pedidos.filter(p => p.estado === 'Confirmado').length}</div>
       <div class="stat-lbl">Confirmados</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon teal stat-icon-bi"><i class="bi bi-truck" aria-hidden="true"></i></div>
     <div class="stat-info">
-      <div class="stat-val">${SGE.DB.pedidos.filter(p=>p.estado==='Entregado').length}</div>
+      <div class="stat-val">${SGE.DB.pedidos.filter(p => p.estado === 'Entregado').length}</div>
       <div class="stat-lbl">Entregados</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon coral stat-icon-bi"><i class="bi bi-x-circle" aria-hidden="true"></i></div>
     <div class="stat-info">
-      <div class="stat-val">${SGE.DB.pedidos.filter(p=>p.estado==='Cancelado').length}</div>
+      <div class="stat-val">${SGE.DB.pedidos.filter(p => p.estado === 'Cancelado').length}</div>
       <div class="stat-lbl">Cancelados</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon navy stat-icon-bi"><i class="bi bi-currency-dollar" aria-hidden="true"></i></div>
     <div class="stat-info">
-      <div class="stat-val">${SGE.fmt.currency(SGE.DB.pedidos.filter(p=>p.estado!=='Cancelado').reduce((s,p)=>s+p.total,0))}</div>
+      <div class="stat-val">${SGE.fmt.currency(SGE.DB.pedidos.filter(p => p.estado !== 'Cancelado').reduce((s, p) => s + p.total, 0))}</div>
       <div class="stat-lbl">Total (no cancel.)</div>
     </div>
   </div>
@@ -87,10 +87,10 @@ SGE.Router.register('pedidos', () => `
         </tr></thead>
         <tbody>
           ${SGE.DB.pedidos.map(p => {
-            const eCls = { Borrador:'badge-pending', Confirmado:'badge-active', Entregado:'badge-info', Cancelado:'badge-danger' }[p.estado] || 'badge-navy';
-            const estadoLbl = p.estado === 'Borrador' ? 'Borrador (pendiente)' : p.estado;
-            const pid = p.pedido_id;
-            return `<tr data-fecha="${p.fecha}" data-estado="${p.estado}" data-id="${pid}" data-total="${p.total}" data-cliente="${(p.cliente || '').replace(/"/g, '&quot;')}">
+    const eCls = { Borrador: 'badge-pending', Confirmado: 'badge-active', Entregado: 'badge-info', Cancelado: 'badge-danger' }[p.estado] || 'badge-navy';
+    const estadoLbl = p.estado === 'Borrador' ? 'Borrador (pendiente)' : p.estado;
+    const pid = p.pedido_id;
+    return `<tr data-fecha="${p.fecha}" data-estado="${p.estado}" data-id="${pid}" data-total="${p.total}" data-cliente="${(p.cliente || '').replace(/"/g, '&quot;')}">
               <td><code style="background:var(--surface-alt);padding:2px 7px;border-radius:4px;font-size:.8rem;font-weight:700;">${p.id}</code></td>
               <td class="td-name">${p.cliente}</td>
               <td><span class="badge ${eCls}">${estadoLbl}</span></td>
@@ -112,7 +112,7 @@ SGE.Router.register('pedidos', () => `
                 </div>
               </td>
             </tr>`;
-          }).join('')}
+}).join('')}
         </tbody>
       </table>
     </div>
@@ -138,16 +138,16 @@ SGE.Router.register('pedidos', () => `
           <label class="form-label">Cliente <span>*</span></label>
           <select class="form-control" id="ped-cliente" onchange="SGE.Ped.showClientInfo(this.value)">
             <option value="">Seleccione cliente...</option>
-            ${SGE.DB.clientes.filter(c=>c.estado==='Activo').map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}
+            ${SGE.DB.clientes.filter(c => c.estado === 'Activo').map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Fecha de Pedido <span>*</span></label>
-          <input class="form-control" type="date" id="ped-fecha" value="${new Date().toISOString().split('T')[0]}">
+          <input class="form-control" type="date" id="ped-fecha" min="${new Date().toISOString().split('T')[0]}" value="${new Date().toISOString().split('T')[0]}">
         </div>
         <div class="form-group col-span-2">
           <label class="form-label">Fecha de Entrega Estimada</label>
-          <input class="form-control" type="date" id="ped-fecha-entrega">
+          <input class="form-control" type="date" id="ped-fecha-entrega" min="${new Date().toISOString().split('T')[0]}">
         </div>
       </div>
 
@@ -254,38 +254,39 @@ SGE.Router.register('pedidos-analytics', () => `
 `);
 
 SGE.Ped = {
-  lineCount: 2,
-  _editPedidoId: null,
+    lineCount: 2,
+    _editPedidoId: null,
 
-  openNew: () => {
-    SGE.Ped._editPedidoId = null;
-    const t = document.getElementById('ped-modal-title');
-    if (t) t.innerHTML = '<i class="bi bi-journal-text me-1" aria-hidden="true"></i>Nuevo Pedido';
-    const fe = document.getElementById('ped-fecha');
-    if (fe) fe.value = new Date().toISOString().split('T')[0];
-    const fent = document.getElementById('ped-fecha-entrega');
-    if (fent) fent.value = '';
-    const cl = document.getElementById('ped-cliente');
-    if (cl) cl.selectedIndex = 0;
-    const lines = document.getElementById('ped-lines');
-    if (lines) {
-      lines.innerHTML = SGE.Ped.renderLine(0) + SGE.Ped.renderLine(1);
-      SGE.Ped.lineCount = 2;
-      SGE.Ped.calcTotals();
-    }
-    const panel = document.getElementById('ped-client-info');
-    if (panel) panel.style.display = 'none';
-    SGE.Modal.open('modal-pedido');
-  },
+    openNew: () => {
+        SGE.Ped._editPedidoId = null;
+        const t = document.getElementById('ped-modal-title');
+        if (t) t.innerHTML = '<i class="bi bi-journal-text me-1" aria-hidden="true"></i>Nuevo Pedido';
+        const hoy = new Date().toISOString().split('T')[0];
+        const fe = document.getElementById('ped-fecha');
+        if (fe) { fe.min = hoy; fe.value = hoy; }
+        const fent = document.getElementById('ped-fecha-entrega');
+        if (fent) { fent.min = hoy; fent.value = ''; }
+        const cl = document.getElementById('ped-cliente');
+        if (cl) cl.selectedIndex = 0;
+        const lines = document.getElementById('ped-lines');
+        if (lines) {
+            lines.innerHTML = SGE.Ped.renderLine(0) + SGE.Ped.renderLine(1);
+            SGE.Ped.lineCount = 2;
+            SGE.Ped.calcTotals();
+        }
+        const panel = document.getElementById('ped-client-info');
+        if (panel) panel.style.display = 'none';
+        SGE.Modal.open('modal-pedido');
+    },
 
-  renderLine: (idx) => `
+    renderLine: (idx) => `
     <div class="order-line" id="pline-${idx}">
       <select class="form-control" style="font-size:.82rem;" onchange="SGE.Ped.onLineChange(this)">
         <option value="">Seleccione producto...</option>
-        ${SGE.DB.productos.filter(p=>p.estado==='Activo'&&p.stock>0).map(p=>{
-          const iv = parseFloat(String(p.iva).replace('%','')) || 13;
-          return `<option value="${p.id}" data-precio="${p.precio_venta}" data-iva="${iv}">${p.nombre} (Stock: ${p.stock})</option>`;
-        }).join('')}
+        ${SGE.DB.productos.filter(p => p.estado === 'Activo' && p.stock > 0).map(p => {
+        const iv = parseFloat(String(p.iva).replace('%', '')) || 13;
+        return `<option value="${p.id}" data-precio="${p.precio_venta}" data-iva="${iv}">${p.nombre} (Stock: ${p.stock})</option>`;
+    }).join('')}
       </select>
       <input class="form-control" type="number" min="1" value="1" style="font-size:.82rem;" oninput="SGE.Ped.calcTotals()">
       <span class="ped-line-unit" style="font-size:.82rem;color:var(--text-muted);padding:.4rem;">—</span>
@@ -293,121 +294,121 @@ SGE.Ped = {
       <button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="document.getElementById('pline-${idx}').remove(); SGE.Ped.calcTotals()" style="color:var(--coral);" aria-label="Quitar línea"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
     </div>`,
 
-  onLineChange: (sel) => {
-    const row = sel.closest('.order-line');
-    const opt = sel.selectedOptions[0];
-    const unit = row?.querySelector('.ped-line-unit');
-    if (unit && opt?.dataset?.precio) unit.textContent = SGE.fmt.currency(parseFloat(opt.dataset.precio));
-    else if (unit) unit.textContent = '—';
-    SGE.Ped.calcTotals();
-  },
+    onLineChange: (sel) => {
+        const row = sel.closest('.order-line');
+        const opt = sel.selectedOptions[0];
+        const unit = row?.querySelector('.ped-line-unit');
+        if (unit && opt?.dataset?.precio) unit.textContent = SGE.fmt.currency(parseFloat(opt.dataset.precio));
+        else if (unit) unit.textContent = '—';
+        SGE.Ped.calcTotals();
+    },
 
-  addLine: () => {
-    const c = SGE.Ped.lineCount++;
-    const container = document.getElementById('ped-lines');
-    if (!container) return;
-    container.insertAdjacentHTML('beforeend', SGE.Ped.renderLine(c));
-  },
+    addLine: () => {
+        const c = SGE.Ped.lineCount++;
+        const container = document.getElementById('ped-lines');
+        if (!container) return;
+        container.insertAdjacentHTML('beforeend', SGE.Ped.renderLine(c));
+    },
 
-  calcTotals: () => {
-    let sub = 0, ivaTotal = 0;
-    document.querySelectorAll('#ped-lines .order-line').forEach(row => {
-      const selEl = row.querySelector('select');
-      const opt = selEl?.selectedOptions[0];
-      const qty = parseFloat(row.querySelector('input[type=number]')?.value) || 0;
-      const price = parseFloat(opt?.dataset?.precio) || 0;
-      const ivaRate = (parseFloat(opt?.dataset?.iva) || 13) / 100;
-      const s = qty * price;
-      sub += s / (1 + ivaRate);
-      ivaTotal += s - s / (1 + ivaRate);
-      const subEl = row.querySelectorAll('span')[1];
-      if (subEl) subEl.textContent = SGE.fmt.currency(s);
-    });
-    const el = (id) => document.getElementById(id);
-    if (el('pt-sub'))   el('pt-sub').textContent   = SGE.fmt.currency(sub);
-    if (el('pt-iva'))   el('pt-iva').textContent   = SGE.fmt.currency(ivaTotal);
-    if (el('pt-total')) el('pt-total').textContent = SGE.fmt.currency(sub + ivaTotal);
-  },
+    calcTotals: () => {
+        let sub = 0, ivaTotal = 0;
+        document.querySelectorAll('#ped-lines .order-line').forEach(row => {
+            const selEl = row.querySelector('select');
+            const opt = selEl?.selectedOptions[0];
+            const qty = parseFloat(row.querySelector('input[type=number]')?.value) || 0;
+            const price = parseFloat(opt?.dataset?.precio) || 0;
+            const ivaRate = (parseFloat(opt?.dataset?.iva) || 13) / 100;
+            const s = qty * price;
+            sub += s / (1 + ivaRate);
+            ivaTotal += s - s / (1 + ivaRate);
+            const subEl = row.querySelectorAll('span')[1];
+            if (subEl) subEl.textContent = SGE.fmt.currency(s);
+        });
+        const el = (id) => document.getElementById(id);
+        if (el('pt-sub')) el('pt-sub').textContent = SGE.fmt.currency(sub);
+        if (el('pt-iva')) el('pt-iva').textContent = SGE.fmt.currency(ivaTotal);
+        if (el('pt-total')) el('pt-total').textContent = SGE.fmt.currency(sub + ivaTotal);
+    },
 
-  showClientInfo: (clienteId) => {
-    const panel = document.getElementById('ped-client-info');
-    const addr = document.getElementById('ped-client-addr');
-    if (!clienteId) {
-      if (panel) panel.style.display = 'none';
-      return;
-    }
-    const c = SGE.DB.clientes.find(x => String(x.id) === String(clienteId));
-    if (c && panel && addr) {
-      const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
-      addr.innerHTML = `${esc(c.direccion)} <span style="opacity:.5">·</span> <i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(c.telefono)}`;
-      panel.style.display = 'flex';
-    } else if (panel) {
-      panel.style.display = 'none';
-    }
-  },
+    showClientInfo: (clienteId) => {
+        const panel = document.getElementById('ped-client-info');
+        const addr = document.getElementById('ped-client-addr');
+        if (!clienteId) {
+            if (panel) panel.style.display = 'none';
+            return;
+        }
+        const c = SGE.DB.clientes.find(x => String(x.id) === String(clienteId));
+        if (c && panel && addr) {
+            const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+            addr.innerHTML = `${esc(c.direccion)} <span style="opacity:.5">·</span> <i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(c.telefono)}`;
+            panel.style.display = 'flex';
+        } else if (panel) {
+            panel.style.display = 'none';
+        }
+    },
 
-  _ensureProductOption: (selectEl, productoId, nombre, precioUnitario, porcentajeIVA) => {
-    if (!selectEl || productoId == null) return;
-    const idStr = String(productoId);
-    if ([...selectEl.options].some((o) => o.value === idStr)) return;
-    const opt = document.createElement('option');
-    opt.value = idStr;
-    opt.dataset.precio = String(Number(precioUnitario) || 0);
-    opt.dataset.iva = String(Number(porcentajeIVA) || 13);
-    const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
-    opt.textContent = `${esc(nombre || ('#' + idStr))} (pedido)`;
-    selectEl.appendChild(opt);
-  },
+    _ensureProductOption: (selectEl, productoId, nombre, precioUnitario, porcentajeIVA) => {
+        if (!selectEl || productoId == null) return;
+        const idStr = String(productoId);
+        if ([...selectEl.options].some((o) => o.value === idStr)) return;
+        const opt = document.createElement('option');
+        opt.value = idStr;
+        opt.dataset.precio = String(Number(precioUnitario) || 0);
+        opt.dataset.iva = String(Number(porcentajeIVA) || 13);
+        const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+        opt.textContent = `${esc(nombre || ('#' + idStr))} (pedido)`;
+        selectEl.appendChild(opt);
+    },
 
-  collectLineas: () => {
-    const lineas = [];
-    document.querySelectorAll('#ped-lines .order-line').forEach(row => {
-      const sel = row.querySelector('select');
-      const pid = parseInt(sel?.value, 10);
-      if (!pid) return;
-      const qty = parseInt(row.querySelector('input[type=number]')?.value, 10) || 0;
-      const opt = sel.selectedOptions[0];
-      const price = parseFloat(opt?.dataset?.precio) || 0;
-      const pct = parseFloat(opt?.dataset?.iva) || 13;
-      if (qty > 0 && price >= 0) lineas.push({ productoId: pid, cantidad: qty, precioUnitario: price, porcentajeIVA: pct });
-    });
-    return lineas;
-  },
+    collectLineas: () => {
+        const lineas = [];
+        document.querySelectorAll('#ped-lines .order-line').forEach(row => {
+            const sel = row.querySelector('select');
+            const pid = parseInt(sel?.value, 10);
+            if (!pid) return;
+            const qty = parseInt(row.querySelector('input[type=number]')?.value, 10) || 0;
+            const opt = sel.selectedOptions[0];
+            const price = parseFloat(opt?.dataset?.precio) || 0;
+            const pct = parseFloat(opt?.dataset?.iva) || 13;
+            if (qty > 0 && price >= 0) lineas.push({ productoId: pid, cantidad: qty, precioUnitario: price, porcentajeIVA: pct });
+        });
+        return lineas;
+    },
 
-  view: async (pedidoId) => {
-    const ped = SGE.DB.pedidos.find(p => p.pedido_id === pedidoId);
-    const bodyEl = document.getElementById('ped-detail-body');
-    if (!bodyEl) return;
-    if (!ped) {
-      SGE.Toast.show('No se encontró el pedido', 'error');
-      return;
-    }
-    bodyEl.innerHTML = '<p style="color:var(--text-muted);font-size:.9rem;"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Cargando detalle…</p>';
-    SGE.Modal.open('modal-pedido-detail');
-    let d;
-    try {
-      d = await SGE.Api.mutations.getPedidoDetalle(pedidoId);
-    } catch (e) {
-      SGE.Modal.close('modal-pedido-detail');
-      SGE.Toast.show(e.message || 'No se pudo cargar el detalle', 'error');
-      return;
-    }
-    const cli = (SGE.DB.clientes || []).find(c => c.nombre === ped.cliente);
-    const rawEst = (d && d.estado) || ped.estado;
-    const eCls = { Borrador:'badge-pending', Confirmado:'badge-active', Entregado:'badge-info', Cancelado:'badge-danger' }[rawEst] || 'badge-navy';
-    const estadoLbl = rawEst === 'Borrador' ? 'Borrador (pendiente)' : rawEst;
-    const lineas = (d && d.lineas) || [];
-    const rows = lineas.map(ln => {
-      const lineTot = Number(ln.total != null ? ln.total : (ln.cantidad * ln.precioUnitario));
-      return `<tr>
+    view: async (pedidoId) => {
+        const ped = SGE.DB.pedidos.find(p => p.pedido_id === pedidoId);
+        const bodyEl = document.getElementById('ped-detail-body');
+        if (!bodyEl) return;
+        if (!ped) {
+            SGE.Toast.show('No se encontró el pedido', 'error');
+            return;
+        }
+        bodyEl.innerHTML = '<p style="color:var(--text-muted);font-size:.9rem;"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Cargando detalle…</p>';
+        SGE.Modal.open('modal-pedido-detail');
+        let d;
+        try {
+            d = await SGE.Api.mutations.getPedidoDetalle(pedidoId);
+        } catch (e) {
+            SGE.Modal.close('modal-pedido-detail');
+            SGE.Toast.show(e.message || 'No se pudo cargar el detalle', 'error');
+            return;
+        }
+        const cli = (SGE.DB.clientes || []).find(c => c.nombre === ped.cliente);
+        const rawEst = (d && d.estado) || ped.estado;
+        const eCls = { Borrador: 'badge-pending', Confirmado: 'badge-active', Entregado: 'badge-info', Cancelado: 'badge-danger' }[rawEst] || 'badge-navy';
+        const estadoLbl = rawEst === 'Borrador' ? 'Borrador (pendiente)' : rawEst;
+        const lineas = (d && d.lineas) || [];
+        const rows = lineas.map(ln => {
+            const lineTot = Number(ln.total != null ? ln.total : (ln.cantidad * ln.precioUnitario));
+            return `<tr>
         <td style="font-size:.82rem;">${ln.producto || ('#' + ln.productoId)}</td>
         <td style="text-align:right;">${ln.cantidad}</td>
         <td style="text-align:right;">${SGE.fmt.currency(ln.precioUnitario)}</td>
         <td style="text-align:right;">${ln.porcentajeIVA ?? '—'}%</td>
         <td style="text-align:right;font-weight:600;">${SGE.fmt.currency(lineTot)}</td>
       </tr>`;
-    }).join('');
-    bodyEl.innerHTML = `
+        }).join('');
+        bodyEl.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
         <div>
           <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;">Pedido</div>
@@ -432,182 +433,183 @@ SGE.Ped = {
           <tbody>${rows || '<tr><td colspan="5" style="color:var(--text-muted);">Sin líneas.</td></tr>'}</tbody>
         </table>
       </div>`;
-  },
+    },
 
-  edit: async (pedidoId) => {
-    const ped = SGE.DB.pedidos.find((p) => p.pedido_id === pedidoId);
-    if (!ped) {
-      SGE.Toast.show('No se encontró el pedido', 'error');
-      return;
-    }
-    if (ped.estado !== 'Borrador') {
-      SGE.Toast.show('Solo se pueden editar pedidos en borrador.', 'error');
-      return;
-    }
-    SGE.Ped._editPedidoId = pedidoId;
-    SGE.Modal.open('modal-pedido');
-    const titleEl = document.getElementById('ped-modal-title');
-    if (titleEl) titleEl.innerHTML = '<i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Cargando pedido…';
-    let d;
-    try {
-      d = await SGE.Api.mutations.getPedidoDetalle(pedidoId);
-    } catch (e) {
-      SGE.Modal.close('modal-pedido');
-      SGE.Ped._editPedidoId = null;
-      SGE.Toast.show(e.message || 'No se pudo cargar el pedido', 'error');
-      return;
-    }
-    if (!d) {
-      SGE.Modal.close('modal-pedido');
-      SGE.Ped._editPedidoId = null;
-      SGE.Toast.show('No se recibió el detalle del pedido', 'error');
-      return;
-    }
-    const estado = d.estado || ped.estado;
-    if (estado !== 'Borrador') {
-      SGE.Modal.close('modal-pedido');
-      SGE.Ped._editPedidoId = null;
-      SGE.Toast.show('Este pedido ya no está en borrador y no se puede editar.', 'error');
-      return;
-    }
-    const num = d.numeroPedido || d.numero_pedido || ped.id;
-    if (titleEl) titleEl.innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar ${num}`;
-    const clienteId = d.clienteId ?? d.cliente_id;
-    const cl = document.getElementById('ped-cliente');
-    if (cl && clienteId != null) cl.value = String(clienteId);
-    const fe = document.getElementById('ped-fecha');
-    const fp = d.fechaPedido || d.fecha_pedido;
-    if (fe && fp) fe.value = String(fp).slice(0, 10);
-    const fent = document.getElementById('ped-fecha-entrega');
-    const fentApi = d.fechaEntregaEstimada || d.fecha_entrega_estimada;
-    if (fent) fent.value = fentApi ? String(fentApi).slice(0, 10) : '';
-    SGE.Ped.showClientInfo(clienteId != null ? String(clienteId) : '');
-    const lines = document.getElementById('ped-lines');
-    if (!lines) return;
-    lines.innerHTML = '';
-    const lineas = d.lineas || d.Lineas || [];
-    SGE.Ped.lineCount = 0;
-    lineas.forEach(() => {
-      const idx = SGE.Ped.lineCount++;
-      lines.insertAdjacentHTML('beforeend', SGE.Ped.renderLine(idx));
-    });
-    if (!lineas.length) {
-      lines.innerHTML = SGE.Ped.renderLine(0) + SGE.Ped.renderLine(1);
-      SGE.Ped.lineCount = 2;
-    }
-    lineas.forEach((ln, i) => {
-      const row = document.getElementById(`pline-${i}`);
-      if (!row) return;
-      const sel = row.querySelector('select');
-      const pid = ln.productoId ?? ln.producto_id;
-      const precio = ln.precioUnitario ?? ln.precio_unitario ?? 0;
-      const iva = ln.porcentajeIVA ?? ln.porcentaje_iva ?? 13;
-      const nombre = ln.producto || '';
-      SGE.Ped._ensureProductOption(sel, pid, nombre, precio, iva);
-      if (sel) sel.value = String(pid);
-      const qtyInp = row.querySelector('input[type=number]');
-      if (qtyInp) qtyInp.value = String(ln.cantidad ?? 1);
-      if (sel) SGE.Ped.onLineChange(sel);
-    });
-    SGE.Ped.calcTotals();
-  },
-
-  confirm: async (pedidoId) => {
-    try {
-      await SGE.Api.mutations.confirmarPedido(pedidoId);
-      await SGE.Api.reloadAfterMutation();
-      SGE.Toast.show('Pedido confirmado');
-      SGE.Router.navigate('pedidos');
-    } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo confirmar', 'error');
-    }
-  },
-
-  entregar: async (pedidoId) => {
-    const ok = typeof Swal !== 'undefined'
-      ? (await Swal.fire({
-        icon: 'question',
-        title: 'Marcar como entregado',
-        text: '¿Confirma que el pedido ya fue entregado al cliente?',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, entregado',
-        cancelButtonText: 'Cancelar'
-      })).isConfirmed
-      : window.confirm('¿Marcar este pedido como entregado al cliente?');
-    if (!ok) return;
-    try {
-      await SGE.Api.mutations.entregarPedido(pedidoId);
-      await SGE.Api.reloadAfterMutation();
-      SGE.Toast.show('Pedido marcado como entregado');
-      SGE.Router.navigate('pedidos');
-    } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo marcar como entregado', 'error');
-    }
-  },
-  // Id del pedido que se está cancelando (si hay modal abierto)
-  _cancelPedidoId: null,
-
-  cancel: async (pedidoId) => {
-    // Abrir modal consistente con el resto de la UI para ingresar motivo
-    SGE.Ped._cancelPedidoId = pedidoId;
-    const motivoEl = document.getElementById('ped-cancel-motivo');
-    if (motivoEl) motivoEl.value = '';
-    SGE.Modal.open('modal-pedido-cancel');
-  },
-
-  // Ejecuta la cancelación tras confirmar en el modal
-  cancelarConfirmado: async () => {
-    const pedidoId = SGE.Ped._cancelPedidoId;
-    if (!pedidoId) { SGE.Toast.show('No hay pedido seleccionado', 'error'); return; }
-    const motivo = document.getElementById('ped-cancel-motivo')?.value || '';
-    try {
-      await SGE.Api.mutations.cancelarPedido(pedidoId, motivo);
-      await SGE.Api.reloadAfterMutation();
-      SGE.Modal.close('modal-pedido-cancel');
-      SGE.Toast.show('Pedido cancelado', 'success');
-      SGE.Router.navigate('pedidos');
-    } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo cancelar', 'error');
-    } finally {
-      SGE.Ped._cancelPedidoId = null;
-    }
-  },
-
-  saveOrder: async () => {
-    const cli = document.getElementById('ped-cliente')?.value;
-    if (!cli) { SGE.Toast.show('Seleccione un cliente', 'error'); return; }
-    const lineas = SGE.Ped.collectLineas();
-    if (!lineas.length) { SGE.Toast.show('Agregue al menos un producto', 'error'); return; }
-    const fecha = document.getElementById('ped-fecha')?.value;
-    const cliRow = SGE.DB.clientes.find(c => String(c.id) === String(cli));
-    const body = {
-      clienteId: parseInt(cli, 10),
-      fechaPedido: fecha || null,
-      direccionEntrega: cliRow?.direccion || null,
-      observaciones: null,
-      lineas
-    };
-    try {
-      const wasEdit = !!SGE.Ped._editPedidoId;
-      if (wasEdit) {
-        await SGE.Api.mutations.putPedido(SGE.Ped._editPedidoId, {
-          clienteId: body.clienteId,
-          direccionEntrega: body.direccionEntrega,
-          observaciones: body.observaciones,
-          lineas: body.lineas
+    edit: async (pedidoId) => {
+        const ped = SGE.DB.pedidos.find((p) => p.pedido_id === pedidoId);
+        if (!ped) {
+            SGE.Toast.show('No se encontró el pedido', 'error');
+            return;
+        }
+        if (ped.estado !== 'Borrador') {
+            SGE.Toast.show('Solo se pueden editar pedidos en borrador.', 'error');
+            return;
+        }
+        SGE.Ped._editPedidoId = pedidoId;
+        SGE.Modal.open('modal-pedido');
+        const titleEl = document.getElementById('ped-modal-title');
+        if (titleEl) titleEl.innerHTML = '<i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Cargando pedido…';
+        let d;
+        try {
+            d = await SGE.Api.mutations.getPedidoDetalle(pedidoId);
+        } catch (e) {
+            SGE.Modal.close('modal-pedido');
+            SGE.Ped._editPedidoId = null;
+            SGE.Toast.show(e.message || 'No se pudo cargar el pedido', 'error');
+            return;
+        }
+        if (!d) {
+            SGE.Modal.close('modal-pedido');
+            SGE.Ped._editPedidoId = null;
+            SGE.Toast.show('No se recibió el detalle del pedido', 'error');
+            return;
+        }
+        const estado = d.estado || ped.estado;
+        if (estado !== 'Borrador') {
+            SGE.Modal.close('modal-pedido');
+            SGE.Ped._editPedidoId = null;
+            SGE.Toast.show('Este pedido ya no está en borrador y no se puede editar.', 'error');
+            return;
+        }
+        const num = d.numeroPedido || d.numero_pedido || ped.id;
+        if (titleEl) titleEl.innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar ${num}`;
+        const clienteId = d.clienteId ?? d.cliente_id;
+        const cl = document.getElementById('ped-cliente');
+        if (cl && clienteId != null) cl.value = String(clienteId);
+        const hoy = new Date().toISOString().split('T')[0];
+        const fe = document.getElementById('ped-fecha');
+        const fp = d.fechaPedido || d.fecha_pedido;
+        if (fe) { fe.min = hoy; if (fp) fe.value = String(fp).slice(0, 10); }
+        const fent = document.getElementById('ped-fecha-entrega');
+        const fentApi = d.fechaEntregaEstimada || d.fecha_entrega_estimada;
+        if (fent) { fent.min = hoy; fent.value = fentApi ? String(fentApi).slice(0, 10) : ''; }
+        SGE.Ped.showClientInfo(clienteId != null ? String(clienteId) : '');
+        const lines = document.getElementById('ped-lines');
+        if (!lines) return;
+        lines.innerHTML = '';
+        const lineas = d.lineas || d.Lineas || [];
+        SGE.Ped.lineCount = 0;
+        lineas.forEach(() => {
+            const idx = SGE.Ped.lineCount++;
+            lines.insertAdjacentHTML('beforeend', SGE.Ped.renderLine(idx));
         });
-      } else {
-        await SGE.Api.mutations.postPedido(body);
-      }
-      await SGE.Api.reloadAfterMutation();
-      SGE.Ped._editPedidoId = null;
-      SGE.Modal.close('modal-pedido');
-      SGE.Toast.show(wasEdit ? 'Pedido actualizado' : 'Pedido registrado (borrador). Confirme desde la tabla.');
-      SGE.Router.navigate('pedidos');
-    } catch (e) {
-      SGE.Toast.show(e.message || 'Error al guardar pedido', 'error');
-    }
-  },
+        if (!lineas.length) {
+            lines.innerHTML = SGE.Ped.renderLine(0) + SGE.Ped.renderLine(1);
+            SGE.Ped.lineCount = 2;
+        }
+        lineas.forEach((ln, i) => {
+            const row = document.getElementById(`pline-${i}`);
+            if (!row) return;
+            const sel = row.querySelector('select');
+            const pid = ln.productoId ?? ln.producto_id;
+            const precio = ln.precioUnitario ?? ln.precio_unitario ?? 0;
+            const iva = ln.porcentajeIVA ?? ln.porcentaje_iva ?? 13;
+            const nombre = ln.producto || '';
+            SGE.Ped._ensureProductOption(sel, pid, nombre, precio, iva);
+            if (sel) sel.value = String(pid);
+            const qtyInp = row.querySelector('input[type=number]');
+            if (qtyInp) qtyInp.value = String(ln.cantidad ?? 1);
+            if (sel) SGE.Ped.onLineChange(sel);
+        });
+        SGE.Ped.calcTotals();
+    },
+
+    confirm: async (pedidoId) => {
+        try {
+            await SGE.Api.mutations.confirmarPedido(pedidoId);
+            await SGE.Api.reloadAfterMutation();
+            SGE.Toast.show('Pedido confirmado');
+            SGE.Router.navigate('pedidos');
+        } catch (e) {
+            SGE.Toast.show(e.message || 'No se pudo confirmar', 'error');
+        }
+    },
+
+    entregar: async (pedidoId) => {
+        const ok = typeof Swal !== 'undefined'
+            ? (await Swal.fire({
+                icon: 'question',
+                title: 'Marcar como entregado',
+                text: '¿Confirma que el pedido ya fue entregado al cliente?',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, entregado',
+                cancelButtonText: 'Cancelar'
+            })).isConfirmed
+            : window.confirm('¿Marcar este pedido como entregado al cliente?');
+        if (!ok) return;
+        try {
+            await SGE.Api.mutations.entregarPedido(pedidoId);
+            await SGE.Api.reloadAfterMutation();
+            SGE.Toast.show('Pedido marcado como entregado');
+            SGE.Router.navigate('pedidos');
+        } catch (e) {
+            SGE.Toast.show(e.message || 'No se pudo marcar como entregado', 'error');
+        }
+    },
+    // Id del pedido que se está cancelando (si hay modal abierto)
+    _cancelPedidoId: null,
+
+    cancel: async (pedidoId) => {
+        // Abrir modal consistente con el resto de la UI para ingresar motivo
+        SGE.Ped._cancelPedidoId = pedidoId;
+        const motivoEl = document.getElementById('ped-cancel-motivo');
+        if (motivoEl) motivoEl.value = '';
+        SGE.Modal.open('modal-pedido-cancel');
+    },
+
+    // Ejecuta la cancelación tras confirmar en el modal
+    cancelarConfirmado: async () => {
+        const pedidoId = SGE.Ped._cancelPedidoId;
+        if (!pedidoId) { SGE.Toast.show('No hay pedido seleccionado', 'error'); return; }
+        const motivo = document.getElementById('ped-cancel-motivo')?.value || '';
+        try {
+            await SGE.Api.mutations.cancelarPedido(pedidoId, motivo);
+            await SGE.Api.reloadAfterMutation();
+            SGE.Modal.close('modal-pedido-cancel');
+            SGE.Toast.show('Pedido cancelado', 'success');
+            SGE.Router.navigate('pedidos');
+        } catch (e) {
+            SGE.Toast.show(e.message || 'No se pudo cancelar', 'error');
+        } finally {
+            SGE.Ped._cancelPedidoId = null;
+        }
+    },
+
+    saveOrder: async () => {
+        const cli = document.getElementById('ped-cliente')?.value;
+        if (!cli) { SGE.Toast.show('Seleccione un cliente', 'error'); return; }
+        const lineas = SGE.Ped.collectLineas();
+        if (!lineas.length) { SGE.Toast.show('Agregue al menos un producto', 'error'); return; }
+        const fecha = document.getElementById('ped-fecha')?.value;
+        const cliRow = SGE.DB.clientes.find(c => String(c.id) === String(cli));
+        const body = {
+            clienteId: parseInt(cli, 10),
+            fechaPedido: fecha || null,
+            direccionEntrega: cliRow?.direccion || null,
+            observaciones: null,
+            lineas
+        };
+        try {
+            const wasEdit = !!SGE.Ped._editPedidoId;
+            if (wasEdit) {
+                await SGE.Api.mutations.putPedido(SGE.Ped._editPedidoId, {
+                    clienteId: body.clienteId,
+                    direccionEntrega: body.direccionEntrega,
+                    observaciones: body.observaciones,
+                    lineas: body.lineas
+                });
+            } else {
+                await SGE.Api.mutations.postPedido(body);
+            }
+            await SGE.Api.reloadAfterMutation();
+            SGE.Ped._editPedidoId = null;
+            SGE.Modal.close('modal-pedido');
+            SGE.Toast.show(wasEdit ? 'Pedido actualizado' : 'Pedido registrado (borrador). Confirme desde la tabla.');
+            SGE.Router.navigate('pedidos');
+        } catch (e) {
+            SGE.Toast.show(e.message || 'Error al guardar pedido', 'error');
+        }
+    },
 
     applyFilters: () => {
         const table = document.getElementById('pedidos-table');
@@ -645,53 +647,53 @@ SGE.Ped = {
             });
             rows.forEach((r) => tbody.appendChild(r));
         }
-      table.querySelectorAll('tbody tr').forEach((tr) => {
-      const estado = tr.dataset.estado || '';
-      const texto = tr.textContent.toLowerCase();
-      const okSearch = !q || texto.includes(q);
-      const okEst = !est || estado === est;
-      const d = (tr.dataset.fecha || '').slice(0, 10);
-      const okDate = !f || d === f;
-      const okLog = !soloConf || estado === 'Confirmado';
-      tr.style.display = okSearch && okEst && okDate && okLog ? '' : 'none';
-    });
-  },
+        table.querySelectorAll('tbody tr').forEach((tr) => {
+            const estado = tr.dataset.estado || '';
+            const texto = tr.textContent.toLowerCase();
+            const okSearch = !q || texto.includes(q);
+            const okEst = !est || estado === est;
+            const d = (tr.dataset.fecha || '').slice(0, 10);
+            const okDate = !f || d === f;
+            const okLog = !soloConf || estado === 'Confirmado';
+            tr.style.display = okSearch && okEst && okDate && okLog ? '' : 'none';
+        });
+    },
 
-  _pedidosDesdeMeses: (months) => {
-    const from = new Date();
-    from.setMonth(from.getMonth() - months);
-    from.setHours(0, 0, 0, 0);
-    return (SGE.DB.pedidos || []).filter((p) => {
-      if (p.estado === 'Cancelado') return false;
-      const d = new Date(p.fecha);
-      return !Number.isNaN(d.getTime()) && d >= from;
-    });
-  },
+    _pedidosDesdeMeses: (months) => {
+        const from = new Date();
+        from.setMonth(from.getMonth() - months);
+        from.setHours(0, 0, 0, 0);
+        return (SGE.DB.pedidos || []).filter((p) => {
+            if (p.estado === 'Cancelado') return false;
+            const d = new Date(p.fecha);
+            return !Number.isNaN(d.getTime()) && d >= from;
+        });
+    },
 
-  _rankClientesDesdePedidos: (months) => {
-    const peds = SGE.Ped._pedidosDesdeMeses(months);
-    const acc = {};
-    peds.forEach((p) => {
-      const k = p.cliente || '—';
-      if (!acc[k]) acc[k] = { cliente: k, pedidos: 0, total: 0 };
-      acc[k].pedidos += 1;
-      acc[k].total += Number(p.total) || 0;
-    });
-    return Object.values(acc).sort((a, b) => (b.pedidos - a.pedidos) || (b.total - a.total)).slice(0, 10);
-  },
+    _rankClientesDesdePedidos: (months) => {
+        const peds = SGE.Ped._pedidosDesdeMeses(months);
+        const acc = {};
+        peds.forEach((p) => {
+            const k = p.cliente || '—';
+            if (!acc[k]) acc[k] = { cliente: k, pedidos: 0, total: 0 };
+            acc[k].pedidos += 1;
+            acc[k].total += Number(p.total) || 0;
+        });
+        return Object.values(acc).sort((a, b) => (b.pedidos - a.pedidos) || (b.total - a.total)).slice(0, 10);
+    },
 
-  refreshAnalytics: () => {
-    const meses = parseInt(document.getElementById('ped-analytics-meses')?.value || '6', 10) || 6;
-    const cliEl = document.getElementById('ped-analytics-clientes');
-    const prodEl = document.getElementById('ped-analytics-prods');
-    const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
-    const rows = SGE.Ped._rankClientesDesdePedidos(meses);
-    if (cliEl) {
-      if (!rows.length) {
-        cliEl.innerHTML = '<div style="color:var(--text-muted);font-size:.85rem;">Sin pedidos en el período seleccionado.</div>';
-      } else {
-        const max = Math.max(...rows.map((x) => x.pedidos || 0), 1);
-        cliEl.innerHTML = rows.map((c, i) => `
+    refreshAnalytics: () => {
+        const meses = parseInt(document.getElementById('ped-analytics-meses')?.value || '6', 10) || 6;
+        const cliEl = document.getElementById('ped-analytics-clientes');
+        const prodEl = document.getElementById('ped-analytics-prods');
+        const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+        const rows = SGE.Ped._rankClientesDesdePedidos(meses);
+        if (cliEl) {
+            if (!rows.length) {
+                cliEl.innerHTML = '<div style="color:var(--text-muted);font-size:.85rem;">Sin pedidos en el período seleccionado.</div>';
+            } else {
+                const max = Math.max(...rows.map((x) => x.pedidos || 0), 1);
+                cliEl.innerHTML = rows.map((c, i) => `
         <div class="top-item">
           <div class="top-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">${i + 1}</div>
           <div class="top-bar-wrap">
@@ -700,17 +702,17 @@ SGE.Ped = {
           </div>
           <div class="top-count">${c.pedidos || 0} pedidos</div>
         </div>`).join('');
-      }
-    }
-    const pmv = ((SGE.DB.reportes && SGE.DB.reportes.productos_mas_vendidos) || []).slice()
-      .sort((a, b) => (b.unidades || 0) - (a.unidades || 0))
-      .slice(0, 10);
-    if (prodEl) {
-      if (!pmv.length) {
-        prodEl.innerHTML = '<div style="color:var(--text-muted);font-size:.85rem;">Sin datos disponibles.</div>';
-      } else {
-        const max = Math.max(...pmv.map((x) => x.unidades || 0), 1);
-        prodEl.innerHTML = pmv.map((p, i) => `
+            }
+        }
+        const pmv = ((SGE.DB.reportes && SGE.DB.reportes.productos_mas_vendidos) || []).slice()
+            .sort((a, b) => (b.unidades || 0) - (a.unidades || 0))
+            .slice(0, 10);
+        if (prodEl) {
+            if (!pmv.length) {
+                prodEl.innerHTML = '<div style="color:var(--text-muted);font-size:.85rem;">Sin datos disponibles.</div>';
+            } else {
+                const max = Math.max(...pmv.map((x) => x.unidades || 0), 1);
+                prodEl.innerHTML = pmv.map((p, i) => `
         <div class="top-item">
           <div class="top-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">${i + 1}</div>
           <div class="top-bar-wrap">
@@ -719,16 +721,16 @@ SGE.Ped = {
           </div>
           <div class="top-count">${p.unidades || 0} unid.</div>
         </div>`).join('');
-      }
+            }
+        }
     }
-  }
 };
 
 document.addEventListener('view:ready', (e) => {
-  if (e.detail?.view === 'pedidos' && typeof SGE.Ped?.applyFilters === 'function') {
-    SGE.Ped.applyFilters();
-  }
-  if (e.detail?.view === 'pedidos-analytics' && typeof SGE.Ped?.refreshAnalytics === 'function') {
-    SGE.Ped.refreshAnalytics();
-  }
+    if (e.detail?.view === 'pedidos' && typeof SGE.Ped?.applyFilters === 'function') {
+        SGE.Ped.applyFilters();
+    }
+    if (e.detail?.view === 'pedidos-analytics' && typeof SGE.Ped?.refreshAnalytics === 'function') {
+        SGE.Ped.refreshAnalytics();
+    }
 });

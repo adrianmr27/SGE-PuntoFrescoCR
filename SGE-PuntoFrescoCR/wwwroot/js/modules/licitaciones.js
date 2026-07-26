@@ -560,9 +560,11 @@ SGE.Lic = {
         });
         const est = document.getElementById('lic-estado');
         if (est) est.value = 'analisis';
+        // Bloquear fechas pasadas: aplicar min=hojey dejar sin valor por defecto
+        const hoy = new Date().toISOString().split('T')[0];
         ['lic-fecha-consultas', 'lic-fecha-oferta', 'lic-fecha-entrega'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.value = '';
+            if (el) { el.min = hoy; el.value = ''; }
         });
         SGE.Modal.open('modal-licitacion');
         setTimeout(() => {
@@ -781,7 +783,8 @@ SGE.Lic = {
     openReminderModal: () => {
         if (!SGE.Lic._selectedLicId) return;
         const f = document.getElementById('lic-reminder-fecha');
-        if (f) f.value = new Date().toISOString().slice(0, 10);
+        const hoy = new Date().toISOString().slice(0, 10);
+        if (f) { f.min = hoy; f.value = hoy; }
         const t = document.getElementById('lic-reminder-titulo');
         if (t) t.value = '';
         SGE.Modal.open('modal-lic-reminder-form');
@@ -820,7 +823,8 @@ SGE.Lic = {
         const inst = document.getElementById('lic-inst');
         if (inst) inst.value = (d && d.institucion) ? d.institucion : l.institucion;
         if (d) {
-            const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            const hoy = new Date().toISOString().split('T')[0];
+            const setVal = (id, v) => { const el = document.getElementById(id); if (el) { if (el.type === 'date') el.min = hoy; el.value = v || ''; } };
             setVal('lic-contacto', d.contactoNombre);
             setVal('lic-tel', d.contactoTelefono);
             setVal('lic-email', d.contactoCorreo);

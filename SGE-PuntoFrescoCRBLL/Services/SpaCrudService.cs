@@ -639,6 +639,23 @@ Este es un mensaje automático, por favor no responder a este correo.
         return p.ProductoId;
     }
 
+    public async Task<int?> CreateCategoriaAsync(CategoriaCreateDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto?.Nombre)) return null;
+        var nombre = dto.Nombre.Trim();
+        if (await _db.Categorias.AnyAsync(c => c.Nombre == nombre, ct))
+            throw new InvalidOperationException("Ya existe una categoría con ese nombre.");
+
+        var cat = new Categoria
+        {
+            Nombre = nombre,
+            Activo = true
+        };
+        _db.Categorias.Add(cat);
+        await _db.SaveChangesAsync(ct);
+        return cat.CategoriaId;
+    }
+
     public async Task<bool> UpdateProductoAsync(int id, ProductoUpdateDto dto, CancellationToken ct = default)
     {
         var p = await _db.Productos.FirstOrDefaultAsync(x => x.ProductoId == id, ct);

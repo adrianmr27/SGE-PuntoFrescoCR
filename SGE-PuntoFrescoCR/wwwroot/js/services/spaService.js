@@ -371,6 +371,7 @@ const mutations = {
   putCliente: (id, body) => jf(`${spaBase}/clientes/${id}`, 'PUT', body),
   postProveedor: (body) => jf(`${spaBase}/proveedores`, 'POST', body),
   putProveedor: (id, body) => jf(`${spaBase}/proveedores/${id}`, 'PUT', body),
+  postCategoria: (body) => jf(`${spaBase}/categorias`, 'POST', body),
   postProducto: (body) => jf(`${spaBase}/productos`, 'POST', body),
   putProducto: (id, body) => jf(`${spaBase}/productos/${id}`, 'PUT', body),
   postOrdenCompra: (body) => jf(`${spaBase}/ordenes-compra`, 'POST', body),

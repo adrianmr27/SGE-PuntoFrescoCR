@@ -12,6 +12,7 @@ SGE.Router.register('inventario', () => {
   </div>
   <div class="page-actions">
     <button type="button" class="btn btn-outline" onclick="SGE.Router.navigate('inventario-movs')"><i class="bi bi-journal-text me-1" aria-hidden="true"></i>Historial</button>
+    <button type="button" class="btn btn-outline" onclick="SGE.Inv.openNewCategory()"><i class="bi bi-folder-plus me-1" aria-hidden="true"></i>Nueva Categoría</button>
     <button type="button" class="btn btn-primary" onclick="SGE.Inv.openNew()"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nuevo Producto</button>
   </div>
 </div>
@@ -33,6 +34,26 @@ ${alertas.length ? `
       <div class="stat-lbl">Productos Activos</div>
     </div>
   </div>
+
+<!-- Modal Nueva Categoría -->
+<div class="modal-overlay" id="modal-categoria">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-folder-plus me-1" aria-hidden="true"></i>Nueva Categoría</span>
+      <button type="button" class="modal-close" aria-label="Cerrar"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nombre de la categoría <span>*</span></label>
+        <input class="form-control" id="cat-nombre" placeholder="Ej: Bebidas, Lácteos...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="SGE.Inv.saveCategory()"><i class="bi bi-folder-plus me-1" aria-hidden="true"></i>Crear Categoría</button>
+    </div>
+  </div>
+</div>
   <div class="stat-card">
     <div class="stat-icon teal stat-icon-bi"><i class="bi bi-folder2-open" aria-hidden="true"></i></div>
     <div class="stat-info">
@@ -263,6 +284,31 @@ SGE.Router.register('inventario-movs', () => `
 
 SGE.Inv = {
   _editId: null,
+
+  openNewCategory: () => {
+    const inp = document.getElementById('cat-nombre');
+    if (inp) inp.value = '';
+    SGE.Modal.open('modal-categoria');
+  },
+
+  saveCategory: async () => {
+    const nombre = document.getElementById('cat-nombre')?.value?.trim();
+    if (!nombre) { SGE.Toast.show('Ingrese un nombre de categoría', 'error'); return; }
+    try {
+      if (!SGE.Api?.mutations?.postCategoria) {
+        SGE.Toast.show('Función de creación de categorías no disponible en esta versión', 'error');
+        return;
+      }
+      await SGE.Api.mutations.postCategoria({ nombre });
+      await SGE.Api.reloadAfterMutation();
+      SGE.Modal.close('modal-categoria');
+      SGE.Toast.show('Categoría creada');
+      // Volver a la vista de inventario para recargar listas y selects
+      SGE.Router.navigate('inventario');
+    } catch (e) {
+      SGE.Toast.show(e.message || 'No se pudo crear la categoría', 'error');
+    }
+  },
 
   openNew: () => {
     SGE.Inv._editId = null;

@@ -188,8 +188,9 @@ SGE.Com = {
     document.getElementById('compra-modal-title').innerHTML = '<i class="bi bi-cart3 me-1" aria-hidden="true"></i>Nueva Orden de Compra';
     const prov = document.getElementById('compra-prov');
     if (prov) prov.value = '';
+    const hoy = new Date().toISOString().split('T')[0];
     const f = document.getElementById('compra-fecha');
-    if (f) f.value = new Date().toISOString().split('T')[0];
+    if (f) { f.min = hoy; f.value = hoy; }
     const obs = document.getElementById('compra-obs');
     if (obs) obs.value = '';
     const lines = document.getElementById('compra-lines');
@@ -315,7 +316,9 @@ SGE.Com = {
       SGE.Com._editOrdenCompraId = ordenCompraId;
       document.getElementById('compra-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Orden — ${typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml(displayId) : displayId}`;
       document.getElementById('compra-prov').value = String(d.proveedorId);
-      document.getElementById('compra-fecha').value = (d.fechaOrden || '').slice(0, 10);
+      const hoy = new Date().toISOString().split('T')[0];
+      const f = document.getElementById('compra-fecha');
+      if (f) { f.min = hoy; f.value = (d.fechaOrden || '').slice(0, 10); }
       document.getElementById('compra-obs').value = d.observaciones || '';
       const lines = document.getElementById('compra-lines');
       if (!lines) return;
