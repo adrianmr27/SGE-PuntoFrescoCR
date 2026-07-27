@@ -625,11 +625,16 @@ Este es un mensaje automático, por favor no responder.
             }
         }
 
-        ViewData["Ok"] = true;
-        ViewBag.RecoverEmail = correoTrim;
-        if (_env.IsDevelopment() && token != null)
-            ViewBag.RecoveryToken = token;
+        // Don't expose the token in any view. Always redirect to a confirmation page
+        // that informs the user an email was sent if the account exists.
+        return RedirectToAction(nameof(RecoverSent), new { email = correoTrim });
+    }
 
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult RecoverSent(string? email)
+    {
+        ViewBag.RecoverEmail = email?.Trim();
         return View();
     }
 
