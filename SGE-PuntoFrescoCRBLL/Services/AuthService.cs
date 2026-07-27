@@ -10,12 +10,17 @@ public class AuthService
 {
     private readonly SgePuntoFrescoDbContext _db;
     private readonly IConfiguration _configuration;
+    private readonly AuditoriaService _auditoria;
 
-    public AuthService(SgePuntoFrescoDbContext db, IConfiguration configuration)
+    public AuthService(SgePuntoFrescoDbContext db, IConfiguration configuration, AuditoriaService auditoria)
     {
         _db = db;
         _configuration = configuration;
+        _auditoria = auditoria;
     }
+
+    private const int MaxIntentosFallidos = 5;
+    private static readonly TimeSpan DuracionBloqueo = TimeSpan.FromMinutes(15);
 
     /// <summary>Resultado detallado del intento de inicio de sesión (HU Usuarios esc. 2 y 3).</summary>
     public async Task<(Usuario? Usuario, string? CodigoError)> AutenticarAsync(string nombreUsuario, string password, CancellationToken ct = default)
@@ -27,17 +32,43 @@ public class AuthService
             .FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario, ct);
 
         if (usuario == null)
+        {
+            await _auditoria.RegistrarAsync(null, nombreUsuario, "LOGIN_USUARIO_INVALIDO", ct: ct);
             return (null, "usuario_invalido");
+        }
 
         if (usuario.BloqueadoHasta.HasValue && usuario.BloqueadoHasta.Value > DateTime.UtcNow)
+        {
+            await _auditoria.RegistrarAsync(usuario.UsuarioId, nombreUsuario, "LOGIN_CUENTA_BLOQUEADA", "Usuario", usuario.UsuarioId.ToString(), ct: ct);
             return (null, "cuenta_bloqueada");
+        }
 
         if (!usuario.Activo)
+        {
+            await _auditoria.RegistrarAsync(usuario.UsuarioId, nombreUsuario, "LOGIN_CUENTA_INACTIVA", "Usuario", usuario.UsuarioId.ToString(), ct: ct);
             return (null, "cuenta_inactiva");
+        }
 
         if (!BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
-            return (null, "clave_incorrecta");
+        {
+            // Cuenta los intentos fallidos y bloquea temporalmente tras varios seguidos
+            usuario.FallasAcceso = (byte)Math.Min(usuario.FallasAcceso + 1, 255);
+            var codigo = "clave_incorrecta";
+            if (usuario.FallasAcceso >= MaxIntentosFallidos)
+            {
+                usuario.BloqueadoHasta = DateTime.UtcNow.Add(DuracionBloqueo);
+                usuario.FallasAcceso = 0;
+                codigo = "cuenta_bloqueada";
+            }
+            usuario.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            await _auditoria.RegistrarAsync(usuario.UsuarioId, nombreUsuario,
+                codigo == "cuenta_bloqueada" ? "LOGIN_CUENTA_BLOQUEADA" : "LOGIN_CLAVE_INCORRECTA",
+                "Usuario", usuario.UsuarioId.ToString(), ct: ct);
+            return (null, codigo);
+        }
 
+        await _auditoria.RegistrarAsync(usuario.UsuarioId, nombreUsuario, "LOGIN_OK", "Usuario", usuario.UsuarioId.ToString(), ct: ct);
         return (usuario, null);
     }
 
@@ -52,8 +83,17 @@ public class AuthService
     /// </summary>
     public async Task AsegurarPasswordAdminAsync(CancellationToken ct = default)
     {
-        var pwd = _configuration["Admin:InitialPassword"] ?? "Admin2024!";
         var usuarios = await _db.Usuarios.Where(u => u.PasswordHash.Contains("PLACEHOLDER")).ToListAsync(ct);
+        if (usuarios.Count == 0) return;
+
+        var pwd = _configuration["Admin:InitialPassword"];
+        if (string.IsNullOrWhiteSpace(pwd))
+        {
+            throw new InvalidOperationException(
+                "Falta configurar 'Admin:InitialPassword' (use 'dotnet user-secrets set Admin:InitialPassword \"...\"' " +
+                "o una variable de entorno; nunca la guarde en appsettings.json).");
+        }
+
         foreach (var u in usuarios)
         {
             var hash = BCrypt.Net.BCrypt.HashPassword(pwd);
@@ -100,6 +140,9 @@ public class AuthService
 
     public async Task<bool> RestablecerPasswordAsync(string correo, string token, string nuevaPassword, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(nuevaPassword) || nuevaPassword.Length < 8)
+            return false;
+
         var u = await _db.Usuarios.FirstOrDefaultAsync(x => x.Correo == correo && x.TokenRecuperacion == token, ct);
         if (u == null || u.TokenExpiracion == null || u.TokenExpiracion < DateTime.UtcNow)
             return false;

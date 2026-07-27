@@ -7,14 +7,16 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class EmpleadoApiController : BaseSpaApiController
 {
     private readonly IEmpleadoService _service;
-    public EmpleadoApiController(IEmpleadoService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public EmpleadoApiController(IEmpleadoService service, IPermisoService permisoService, AuditoriaService auditoria) : base(permisoService, auditoria) => _service = service;
 
     [HttpPost("empleados")]
     public async Task<ActionResult<int>> PostEmpleado([FromBody] EmpleadoCreateDto dto, CancellationToken ct)
     {
         if (!await PuedeAsync("EMPLEADOS", PermisoAccion.Crear, ct)) return Forbid();
         var id = await _service.CreateEmpleadoAsync(dto, ct);
-        return id == null ? BadRequest() : Ok(id.Value);
+        if (id == null) return BadRequest();
+        await AuditarAsync("EMPLEADO_CREADO", "Empleado", id.Value.ToString(), ct: ct);
+        return Ok(id.Value);
     }
 
     [HttpPut("empleados/{id:int}")]
@@ -22,7 +24,9 @@ public class EmpleadoApiController : BaseSpaApiController
     {
         if (!await PuedeAsync("EMPLEADOS", PermisoAccion.Editar, ct)) return Forbid();
         var ok = await _service.UpdateEmpleadoAsync(id, dto, ct);
-        return ok ? NoContent() : NotFound();
+        if (!ok) return NotFound();
+        await AuditarAsync("EMPLEADO_EDITADO", "Empleado", id.ToString(), ct: ct);
+        return NoContent();
     }
 
     [HttpPut("empleados/yo")]

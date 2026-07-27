@@ -21,17 +21,17 @@ SGE.Router.register('mi-perfil', () => {
   </div>
 </div>
 <div class="card" style="width:100%;">
-  <div class="card-header"><span class="card-title"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>${emp.nombre}</span></div>
+  <div class="card-header"><span class="card-title"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>${SGE.Export.escapeHtml(emp.nombre)}</span></div>
   <div class="card-body">
-    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">Puesto: <strong>${emp.puesto}</strong> · Área: <strong>${emp.area}</strong></p>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">Puesto: <strong>${SGE.Export.escapeHtml(emp.puesto)}</strong> · Área: <strong>${SGE.Export.escapeHtml(emp.area)}</strong></p>
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">Teléfono</label>
-        <input class="form-control" id="yo-tel" value="${emp.telefono || ''}" placeholder="0000-0000">
+        <input class="form-control" id="yo-tel" value="${SGE.Export.escapeHtml(emp.telefono || '')}" placeholder="0000-0000">
       </div>
       <div class="form-group">
         <label class="form-label">Correo</label>
-        <input class="form-control" id="yo-email" type="email" value="${emp.correo || ''}">
+        <input class="form-control" id="yo-email" type="email" value="${SGE.Export.escapeHtml(emp.correo || '')}">
       </div>
       <div class="form-group">
         <label class="form-label">Contacto de emergencia</label>
@@ -82,10 +82,7 @@ SGE.Perfil = {
         };
         try {
             await SGE.Api.mutations.putEmpleadoYo(body);
-            await SGE.Api.reloadAfterMutation();
             SGE.Toast.show('Perfil actualizado');
-            SGE.Router.navigate('dashboard');
-            setTimeout(() => SGE.Router.navigate('mi-perfil'), 50);
         } catch (e) {
             SGE.Toast.show(e.message || 'Error', 'error');
         }

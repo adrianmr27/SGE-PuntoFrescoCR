@@ -7,7 +7,7 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class ParametroApiController : BaseSpaApiController
 {
     private readonly IParametroService _service;
-    public ParametroApiController(IParametroService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public ParametroApiController(IParametroService service, IPermisoService permisoService, AuditoriaService auditoria) : base(permisoService, auditoria) => _service = service;
 
     [HttpPut("parametros/{id:int}")]
     public async Task<IActionResult> PutParametro(int id, [FromBody] ParametroMutateDto dto, CancellationToken ct)

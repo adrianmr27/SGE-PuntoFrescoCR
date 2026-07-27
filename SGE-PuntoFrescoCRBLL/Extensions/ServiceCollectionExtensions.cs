@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped(typeof(IRepositorioGenerico<>), typeof(RepositorioGenerico<>));
         services.AddScoped<IEmailNotificacionService, SmtpEmailNotificacionService>();
         services.AddScoped<AuthService>();
+        services.AddScoped<AuditoriaService>();
         services.AddScoped<SpaDataService>();
         services.AddScoped<SpaCrudService>();
         services.AddScoped<IParametroService, ParametroService>();

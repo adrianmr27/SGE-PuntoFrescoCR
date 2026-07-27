@@ -39,24 +39,26 @@ SGE.Router.register('proveedores', () => `
           <th>#</th><th>Empresa Proveedora</th><th>Identificación</th><th>Estado</th><th>Teléfono</th><th>Correo</th><th>Acciones</th>
         </tr></thead>
         <tbody>
-          ${SGE.DB.proveedores.map(p=>`
+          ${SGE.DB.proveedores.map(p=>{
+          const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+          return `
           <tr>
             <td style="color:var(--text-muted)">${p.id}</td>
             <td>
-              <div class="td-name">${p.nombre}</div>
-              <div class="td-sub"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${p.direccion}</div>
+              <div class="td-name">${esc(p.nombre)}</div>
+              <div class="td-sub"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${esc(p.direccion)}</div>
             </td>
-            <td style="font-size:.82rem;">${p.identificacion}</td>
+            <td style="font-size:.82rem;">${esc(p.identificacion)}</td>
             <td><span class="badge ${p.estado==='Activo'?'badge-active':'badge-inactive'}">${p.estado}</span></td>
-            <td><i class="bi bi-telephone me-1" aria-hidden="true"></i>${p.telefono}</td>
-            <td style="font-size:.82rem;"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${p.correo}</td>
+            <td><i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(p.telefono)}</td>
+            <td style="font-size:.82rem;"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${esc(p.correo)}</td>
             <td>
               <div class="flex gap-1">
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Prov.edit(${p.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${p.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Prov.toggleActivo(${p.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
               </div>
             </td>
-          </tr>`).join('')}
+          </tr>`;}).join('')}
         </tbody>
       </table>
     </div>
@@ -122,7 +124,7 @@ SGE.Prov = {
     window._provEditId = id;
     const p = SGE.DB.proveedores.find(x => x.id === id);
     if (!p) return;
-    document.getElementById('prov-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Proveedor — ${p.nombre}`;
+    document.getElementById('prov-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Proveedor — ${typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml(p.nombre) : p.nombre}`;
     document.getElementById('prov-nombre').value = p.nombre;
     document.getElementById('prov-id').value = p.identificacion;
     document.getElementById('prov-tel').value = p.telefono || '';
@@ -144,10 +146,7 @@ SGE.Prov = {
         direccion: p.direccion || null,
         activo: p.estado !== 'Activo'
       });
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(p.estado === 'Activo' ? 'Proveedor desactivado' : 'Proveedor activado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('proveedores'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }
@@ -183,10 +182,7 @@ SGE.Prov = {
       }
       SGE.Modal.close('modal-proveedor');
       window._provEditId = null;
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Proveedor guardado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('proveedores'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

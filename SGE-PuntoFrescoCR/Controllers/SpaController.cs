@@ -25,4 +25,15 @@ public class SpaController : ControllerBase
         var data = await _spa.ObtenerBootstrapAsync(uid, ct);
         return Ok(data);
     }
+
+    [HttpGet("shell")]
+    [ProducesResponseType(typeof(SpaShellDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SpaShellDto>> Shell(CancellationToken ct)
+    {
+        var uid = 0;
+        var userClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userClaim) && int.TryParse(userClaim, out var parsed)) uid = parsed;
+        var data = await _spa.ObtenerShellAsync(uid, ct);
+        return Ok(data);
+    }
 }

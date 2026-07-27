@@ -13,11 +13,13 @@ public class RolApiController : ControllerBase
 {
     private readonly IRolService _rolService;
     private readonly IPermisoService _permisoService;
+    private readonly AuditoriaService _auditoria;
 
-    public RolApiController(IRolService rolService, IPermisoService permisoService)
+    public RolApiController(IRolService rolService, IPermisoService permisoService, AuditoriaService auditoria)
     {
         _rolService = rolService;
         _permisoService = permisoService;
+        _auditoria = auditoria;
     }
 
     private int UsuarioOperador()
@@ -25,6 +27,9 @@ public class RolApiController : ControllerBase
         var v = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(v, out var id) ? id : 0;
     }
+
+    private Task AuditarAsync(string accion, string? entidad = null, string? entidadId = null, string? detalle = null, CancellationToken ct = default)
+        => _auditoria.RegistrarAsync(UsuarioOperador(), User.FindFirstValue("usuario"), accion, entidad, entidadId, detalle, ct: ct);
 
     private async Task<bool> PuedeAsync(PermisoAccion accion, CancellationToken ct)
     {
@@ -44,7 +49,9 @@ public class RolApiController : ControllerBase
     {
         if (!await PuedeAsync(PermisoAccion.Crear, ct)) return Forbid();
         var id = await _rolService.CreateRolAsync(dto, ct);
-        return id == null ? BadRequest() : Ok(id.Value);
+        if (id == null) return BadRequest();
+        await AuditarAsync("ROL_CREADO", "Rol", id.Value.ToString(), dto.Nombre, ct);
+        return Ok(id.Value);
     }
 
     [HttpPut("roles/{id:int}")]
@@ -52,7 +59,9 @@ public class RolApiController : ControllerBase
     {
         if (!await PuedeAsync(PermisoAccion.Editar, ct)) return Forbid();
         var ok = await _rolService.UpdateRolAsync(id, dto, ct);
-        return ok ? NoContent() : NotFound();
+        if (!ok) return NotFound();
+        await AuditarAsync("ROL_EDITADO", "Rol", id.ToString(), ct: ct);
+        return NoContent();
     }
 
     [HttpPut("roles/{id:int}/permisos")]
@@ -60,6 +69,8 @@ public class RolApiController : ControllerBase
     {
         if (!await PuedeAsync(PermisoAccion.Editar, ct)) return Forbid();
         var ok = await _rolService.UpdatePermisosRolAsync(id, filas ?? new(), ct);
-        return ok ? NoContent() : NotFound();
+        if (!ok) return NotFound();
+        await AuditarAsync("ROL_PERMISOS_EDITADOS", "Rol", id.ToString(), ct: ct);
+        return NoContent();
     }
 }

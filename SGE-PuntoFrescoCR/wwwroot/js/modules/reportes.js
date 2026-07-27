@@ -111,7 +111,7 @@ SGE.Router.register('reportes', () => {
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>Ventas por Período</span>
-          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'excel\')"><i class="bi bi-download me-1" aria-hidden="true"></i>Excel</button>' : ''}
+          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'excel\',\'ventas-periodo\')"><i class="bi bi-download me-1" aria-hidden="true"></i>Excel</button>' : ''}
         </div>
         <div class="card-body" style="padding:.75rem 1.5rem;">
           ${(vpm.length ? vpm : [{ etiqueta: 'Sin datos', total: 0 }]).map(r => {
@@ -132,16 +132,17 @@ SGE.Router.register('reportes', () => {
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="bi bi-shop me-1" aria-hidden="true"></i>Ventas por Cliente</span>
-          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'pdf\')"><i class="bi bi-printer me-1" aria-hidden="true"></i>PDF</button>' : ''}
+          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'pdf\',\'ventas-cliente\')"><i class="bi bi-printer me-1" aria-hidden="true"></i>PDF</button>' : ''}
         </div>
         <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Cliente</th><th>Pedidos</th><th>Total</th><th>%</th></tr></thead>
             <tbody>
               ${(vpc.length ? vpc : [{ cliente: 'Sin datos', pedidos: 0, total: 0 }]).map((r, i, arr) => {
         const tot = arr.reduce((s, x) => s + (x.total || 0), 0) || 1;
         return `<tr>
-                  <td class="td-name">${r.cliente}</td>
+                  <td class="td-name">${SGE.Export.escapeHtml(r.cliente)}</td>
                   <td>${r.pedidos}</td>
                   <td style="font-weight:700;">${SGE.fmt.currency(r.total)}</td>
                   <td><span class="badge badge-info">${Math.round(((r.total || 0) / tot) * 100)}%</span></td>
@@ -149,22 +150,24 @@ SGE.Router.register('reportes', () => {
     }).join('')}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
       <div class="card" style="grid-column:1/-1;">
         <div class="card-header">
           <span class="card-title"><i class="bi bi-trophy me-1" aria-hidden="true"></i>Productos Más Vendidos del Período</span>
-          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'excel\')"><i class="bi bi-download me-1" aria-hidden="true"></i>Excel</button>' : ''}
+          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'excel\',\'productos-vendidos\')"><i class="bi bi-download me-1" aria-hidden="true"></i>Excel</button>' : ''}
         </div>
         <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
           <table>
             <thead><tr><th>#</th><th>Producto</th><th>Categoría</th><th>Unidades</th><th>Ingresos</th><th>Margen</th></tr></thead>
             <tbody>
               ${(pmv.length ? pmv : [{ producto: '—', categoria: '—', unidades: 0, ingresos: 0 }]).map((r, i) => `
               <tr>
                 <td style="color:var(--text-muted)">${i + 1}</td>
-                <td class="td-name">${r.producto}</td>
+                <td class="td-name">${SGE.Export.escapeHtml(r.producto)}</td>
                 <td><span class="badge badge-info">${r.categoria}</span></td>
                 <td style="font-weight:600;">${r.unidades} uds.</td>
                 <td style="font-weight:700;color:var(--navy);">${SGE.fmt.currency(r.ingresos)}</td>
@@ -172,6 +175,7 @@ SGE.Router.register('reportes', () => {
               </tr>`).join('')}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
@@ -183,9 +187,10 @@ SGE.Router.register('reportes', () => {
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Estado del Inventario</span>
-          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'excel\')"><i class="bi bi-download me-1" aria-hidden="true"></i>Excel</button>' : ''}
+          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'excel\',\'inventario\')"><i class="bi bi-download me-1" aria-hidden="true"></i>Excel</button>' : ''}
         </div>
         <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Producto</th><th>Stock</th><th>Mín.</th><th>Valor</th><th>Alerta</th></tr></thead>
             <tbody>
@@ -199,6 +204,7 @@ SGE.Router.register('reportes', () => {
               </tr>`).join('')}
             </tbody>
           </table>
+          </div>
         </div>
         <div class="card-footer" style="font-size:.84rem;text-align:right;">
           Valor total en inventario: <strong>${SGE.fmt.currency(SGE.DB.productos.reduce((s, p) => s + p.precio_venta * p.stock, 0))}</strong>
@@ -237,9 +243,10 @@ SGE.Router.register('reportes', () => {
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Resumen de Licitaciones</span>
-          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'pdf\')"><i class="bi bi-printer me-1" aria-hidden="true"></i>PDF</button>' : ''}
+          ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-ghost btn-sm" onclick="SGE.Rep.export(\'pdf\',\'licitaciones\')"><i class="bi bi-printer me-1" aria-hidden="true"></i>PDF</button>' : ''}
         </div>
         <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Código</th><th>Institución</th><th>Estado</th><th>Monto</th></tr></thead>
             <tbody>
@@ -255,6 +262,7 @@ SGE.Router.register('reportes', () => {
     }).join('')}
             </tbody>
           </table>
+          </div>
         </div>
         <div class="card-footer" style="font-size:.84rem;display:flex;justify-content:space-between;">
           <span>Adjudicadas: <strong style="color:var(--green-dark);">${SGE.DB.licitaciones.filter(l => l.estado === 'adjudicado').length}</strong></span>
@@ -305,7 +313,7 @@ SGE.Router.register('reportes', () => {
         <option value="180">Últimos 6 meses</option>
         <option value="365">Último año</option>
       </select>
-      ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-outline btn-sm" onclick="SGE.Rep.export(\'excel\')"><i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Exportar</button>' : ''}
+      ${SGE.hasPerm('REPORTES', 'exportar') ? '<button type="button" class="btn btn-outline btn-sm" onclick="SGE.Rep.export(\'excel\',\'predicciones\')"><i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Exportar</button>' : ''}
     </div>
     <div id="rep-pred-container" style="min-height:120px;"></div>
   </div>
@@ -322,7 +330,87 @@ SGE.Rep = {
         from.setDate(from.getDate() - days);
         return (SGE.DB.pedidos || []).filter(p => p.estado !== 'Cancelado' && new Date(p.fecha) >= from);
     },
-    export: (tipo) => {
+    /** Arma cols/filas (crudas, sin formatear) para la sección de reporte indicada.
+     *  Cada método de _sectionData debe reflejar exactamente los mismos datos que se
+     *  muestran en pantalla para esa tarjeta, para que "exportar" nunca traiga otra cosa. */
+    _sectionData: (seccion) => {
+        const rep = SGE.DB.reportes || {};
+        switch (seccion) {
+            case 'ventas-periodo': {
+                const vpm = rep.ventas_por_mes || [];
+                return {
+                    caption: 'Ventas por período', cols: ['Período', 'Total'], numCols: [1], moneyCols: [1],
+                    rows: vpm.map(r => [r.etiqueta || r.mes || '—', Number(r.total || 0)])
+                };
+            }
+            case 'ventas-cliente': {
+                const peds = SGE.Rep._filteredPedidos();
+                const vpc = Object.values(peds.reduce((acc, p) => {
+                    const key = p.cliente || '—';
+                    acc[key] = acc[key] || { cliente: key, pedidos: 0, total: 0 };
+                    acc[key].pedidos += 1;
+                    acc[key].total += p.total || 0;
+                    return acc;
+                }, {})).sort((a, b) => b.total - a.total);
+                return {
+                    caption: 'Ventas por cliente', cols: ['Cliente', 'Pedidos', 'Total'], numCols: [1, 2], moneyCols: [2],
+                    rows: (vpc.length ? vpc : (rep.ventas_por_cliente || [])).map(r => [r.cliente, Number(r.pedidos || 0), Number(r.total || 0)])
+                };
+            }
+            case 'productos-vendidos': {
+                const pmv = rep.productos_mas_vendidos || [];
+                return {
+                    caption: 'Productos más vendidos del período', cols: ['Producto', 'Categoría', 'Unidades', 'Ingresos'], numCols: [2, 3], moneyCols: [3],
+                    rows: (pmv.length ? pmv : []).map(r => [r.producto, r.categoria, Number(r.unidades || 0), Number(r.ingresos || 0)])
+                };
+            }
+            case 'inventario': {
+                return {
+                    caption: 'Estado del inventario', cols: ['Producto', 'Categoría', 'Stock', 'Mínimo', 'Valor', 'Alerta'], numCols: [2, 3, 4], moneyCols: [4],
+                    rows: (SGE.DB.productos || []).map(p => [
+                        p.nombre, p.categoria, Number(p.stock || 0), Number(p.stock_min || 0), Number((p.precio_venta || 0) * (p.stock || 0)),
+                        p.stock <= 0 ? 'Sin stock' : (p.stock <= p.stock_min ? 'Bajo' : 'OK')
+                    ])
+                };
+            }
+            case 'licitaciones': {
+                const lbl = { analisis: 'Análisis', preparacion: 'Preparación', enviada: 'Enviada', adjudicado: 'Adjudicado', 'no-adj': 'No Adj.' };
+                return {
+                    caption: 'Licitaciones', cols: ['Código', 'Institución', 'Estado', 'Total'], numCols: [3], moneyCols: [3],
+                    rows: (SGE.DB.licitaciones || []).map(l => [l.id, l.institucion, lbl[l.estado] || l.estado, Number(l.total || 0)])
+                };
+            }
+            case 'predicciones': {
+                const hc = SGE.DB.historialClientes || {};
+                const days = parseInt(document.getElementById('rep-pred-horizonte')?.value || '90', 10) || 90;
+                const clienteEnc = document.getElementById('rep-pred-cliente')?.value || '';
+                let clienteSel = '';
+                if (clienteEnc) { try { clienteSel = decodeURIComponent(clienteEnc); } catch { clienteSel = clienteEnc; } }
+                const cutoff = new Date();
+                cutoff.setHours(0, 0, 0, 0);
+                cutoff.setDate(cutoff.getDate() - days);
+                const minMes = cutoff.toISOString().slice(0, 7);
+                const clientes = clienteSel ? [clienteSel] : Object.keys(hc).sort();
+                const rows = [];
+                for (const cli of clientes) {
+                    const hist = hc[cli];
+                    if (!Array.isArray(hist) || !hist.length) continue;
+                    const filtered = hist.filter((h) => String(h.mes || h.Mes || '') >= minMes);
+                    if (!filtered.length) continue;
+                    const conteo = {};
+                    filtered.forEach((m) => (m.productos || m.Productos || []).forEach((p) => { conteo[p] = (conteo[p] || 0) + 1; }));
+                    Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 3).forEach(([prod, cnt]) => {
+                        rows.push([cli, prod, Math.round((cnt / filtered.length) * 100)]);
+                    });
+                }
+                return { caption: 'Predicción de compra sugerida por cliente', cols: ['Cliente', 'Producto sugerido', 'Frecuencia %'], numCols: [2], pctCols: [2], rows };
+            }
+            default:
+                return null;
+        }
+    },
+
+    export: (tipo, seccion = 'ejecutivo') => {
         if (!SGE.hasPerm('REPORTES', 'exportar')) {
             SGE.Toast.show('No tiene permiso para exportar reportes', 'error');
             return;
@@ -331,6 +419,32 @@ SGE.Rep = {
             SGE.Toast.show('Módulo de exportación no cargado', 'error');
             return;
         }
+
+        // Exportación de una sola tarjeta/sección (solo sus propios datos)
+        if (seccion !== 'ejecutivo') {
+            const sec = SGE.Rep._sectionData(seccion);
+            if (!sec || !sec.rows.length) {
+                SGE.Toast.show('No hay datos para exportar en esta sección', 'warning');
+                return;
+            }
+            const numSet = new Set(sec.numCols || []);
+            const moneySet = new Set(sec.moneyCols || []);
+            const pctSet = new Set(sec.pctCols || []);
+            const fecha = new Date().toISOString().slice(0, 10);
+            if (tipo === 'pdf') {
+                const rows = sec.rows.map(r => r.map((c, i) => moneySet.has(i) ? SGE.fmt.currency(c) : pctSet.has(i) ? `${c}%` : c));
+                const table = SGE.Export.buildTable(sec.caption, sec.cols, rows, sec.numCols);
+                SGE.Export.openPrintDocument(sec.caption, SGE.Export.wrapLetterhead(sec.caption, `Período: ${SGE.Rep._periodo}`, table));
+                return;
+            }
+            const rows = sec.rows.map(r => r.map((c, i) => numSet.has(i) ? Number(c || 0).toFixed(moneySet.has(i) ? 2 : 0) : c));
+            const table = SGE.Export.buildTable(sec.caption, sec.cols, rows, sec.numCols);
+            const slug = seccion.replace(/[^a-z0-9-]/gi, '');
+            SGE.Export.downloadExcelHtml(`reporte_${slug}_${fecha}.xls`, sec.caption, table);
+            return;
+        }
+
+        // Reporte ejecutivo completo (todas las secciones juntas)
         const peds = SGE.Rep._filteredPedidos();
         const rep = SGE.DB.reportes || {};
         const vpc = Object.values(peds.reduce((acc, p) => {
@@ -368,8 +482,7 @@ SGE.Rep = {
     },
     updatePeriod: (periodo) => {
         SGE.Rep._periodo = periodo;
-        SGE.Router.navigate('dashboard');
-        setTimeout(() => SGE.Router.navigate('reportes'), 50);
+        SGE.Router.refresh();
     },
 
     refreshPredTab: () => {

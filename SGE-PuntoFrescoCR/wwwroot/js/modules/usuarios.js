@@ -45,20 +45,22 @@ SGE.Router.register('usuarios', () => `
           <th>#</th><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Último Acceso</th><th>Acciones</th>
         </tr></thead>
         <tbody>
-          ${SGE.DB.usuarios.map(u=>`
+          ${SGE.DB.usuarios.map(u=>{
+          const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+          return `
           <tr>
             <td style="color:var(--text-muted)">${u.id}</td>
             <td>
               <div style="display:flex;align-items:center;gap:.65rem;">
-                <div class="user-avatar" style="width:30px;height:30px;font-size:.72rem;">${u.nombre.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+                <div class="user-avatar" style="width:30px;height:30px;font-size:.72rem;">${esc(u.nombre.split(' ').map(n=>n[0]).join('').slice(0,2))}</div>
                 <div>
-                  <div class="td-name">${u.nombre}</div>
-                  <div class="td-sub">${u.correo}</div>
+                  <div class="td-name">${esc(u.nombre)}</div>
+                  <div class="td-sub">${esc(u.correo)}</div>
                 </div>
               </div>
             </td>
-            <td><code style="background:var(--surface-alt);padding:2px 6px;border-radius:4px;font-size:.8rem;">${u.usuario}</code></td>
-            <td><span class="badge badge-navy">${u.rol}</span></td>
+            <td><code style="background:var(--surface-alt);padding:2px 6px;border-radius:4px;font-size:.8rem;">${esc(u.usuario)}</code></td>
+            <td><span class="badge badge-navy">${esc(u.rol)}</span></td>
             <td><span class="badge ${u.estado==='Activo'?'badge-active':'badge-inactive'}">${u.estado}</span></td>
             <td style="color:var(--text-muted); font-size:.82rem;">${u.ultimo_acceso ? SGE.fmt.date(u.ultimo_acceso) : '—'}</td>
             <td>
@@ -67,7 +69,7 @@ SGE.Router.register('usuarios', () => `
                 ${SGE.hasPerm('USUARIOS', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="${u.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Usu.toggleActivo(${u.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>` : ''}
               </div>
             </td>
-          </tr>`).join('')}
+          </tr>`;}).join('')}
         </tbody>
       </table>
     </div>
@@ -192,7 +194,7 @@ SGE.Usu = {
     const u = SGE.DB.usuarios.find(x => x.id === id);
     if (!u) return;
     window._usuEditId = id;
-    document.getElementById('u-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Usuario — ${u.nombre}`;
+    document.getElementById('u-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Usuario — ${typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml(u.nombre) : u.nombre}`;
     const passInfo = document.getElementById('u-pass-info');
     if (passInfo) passInfo.style.display = 'none';
     document.getElementById('u-nombre').value = u.nombre;
@@ -233,10 +235,7 @@ SGE.Usu = {
         contactoEmergenciaTel: u.contacto_emergencia_tel || null,
         alergiasMedicamentos: u.alergias || null
       });
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(activo ? 'Usuario activado' : 'Usuario desactivado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('usuarios'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }
@@ -307,10 +306,7 @@ SGE.Usu = {
       }
       SGE.Modal.close('modal-usuario');
       window._usuEditId = null;
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(wasEdit ? 'Usuario guardado' : 'Usuario creado. Se envió la contraseña temporal al correo registrado.');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('usuarios'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

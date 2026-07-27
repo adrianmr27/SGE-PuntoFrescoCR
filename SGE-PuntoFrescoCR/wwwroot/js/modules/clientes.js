@@ -39,24 +39,26 @@ SGE.Router.register('clientes', () => `
           <th>#</th><th>Nombre / Empresa</th><th>Identificación</th><th>Estado</th><th>Teléfono</th><th>Correo</th><th>Acciones</th>
         </tr></thead>
         <tbody>
-          ${SGE.DB.clientes.map(c=>`
+          ${SGE.DB.clientes.map(c=>{
+          const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+          return `
           <tr>
             <td style="color:var(--text-muted)">${c.id}</td>
             <td>
-              <div class="td-name">${c.nombre}</div>
-              <div class="td-sub"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${c.direccion}</div>
+              <div class="td-name">${esc(c.nombre)}</div>
+              <div class="td-sub"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${esc(c.direccion)}</div>
             </td>
-            <td style="font-size:.82rem;">${c.identificacion}</td>
+            <td style="font-size:.82rem;">${esc(c.identificacion)}</td>
             <td><span class="badge ${c.estado==='Activo'?'badge-active':'badge-inactive'}">${c.estado}</span></td>
-            <td><i class="bi bi-telephone me-1" aria-hidden="true"></i>${c.telefono}</td>
-            <td style="font-size:.82rem;"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${c.correo}</td>
+            <td><i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(c.telefono)}</td>
+            <td style="font-size:.82rem;"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${esc(c.correo)}</td>
             <td>
               <div class="flex gap-1">
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Cli.edit(${c.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${c.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Cli.toggleActivo(${c.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
               </div>
             </td>
-          </tr>`).join('')}
+          </tr>`;}).join('')}
         </tbody>
       </table>
     </div>
@@ -122,7 +124,7 @@ SGE.Cli = {
     window._cliEditId = id;
     const c = SGE.DB.clientes.find(x => x.id === id);
     if (!c) return;
-    document.getElementById('cli-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Cliente — ${c.nombre}`;
+    document.getElementById('cli-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Cliente — ${typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml(c.nombre) : c.nombre}`;
     document.getElementById('cli-nombre').value = c.nombre;
     document.getElementById('cli-id').value = c.identificacion;
     document.getElementById('cli-tel').value = c.telefono || '';
@@ -144,10 +146,7 @@ SGE.Cli = {
         direccion: c.direccion || null,
         activo: c.estado !== 'Activo'
       });
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(c.estado === 'Activo' ? 'Cliente desactivado' : 'Cliente activado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('clientes'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }
@@ -183,10 +182,7 @@ SGE.Cli = {
       }
       SGE.Modal.close('modal-cliente');
       window._cliEditId = null;
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Cliente guardado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('clientes'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

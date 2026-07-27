@@ -10,6 +10,86 @@ public class SpaDataService
 
     public SpaDataService(SgePuntoFrescoDbContext db) => _db = db;
 
+    /// <summary>Carga mínima para permisos, módulos y KPIs del panel principal.</summary>
+    public async Task<SpaShellDto> ObtenerShellAsync(int usuarioId = 0, CancellationToken ct = default)
+    {
+        var dto = new SpaShellDto();
+
+        // Ejecutar las consultas que usan _db de forma secuencial para evitar concurrencia en el mismo DbContext
+        dto.Modulos = await _db.Modulos.AsNoTracking()
+            .Where(m => m.Activo)
+            .OrderBy(m => m.Orden)
+            .Select(m => new ModuloClienteDto { Id = m.ModuloId, Codigo = m.Codigo, Nombre = m.Nombre })
+            .ToListAsync(ct);
+
+        dto.Notificaciones = await BuildNotificacionesAsync(ct);
+        dto.Counts = await BuildDashboardCountsAsync(ct);
+
+        if (usuarioId > 0)
+        {
+            var permisos = await _db.Usuarios.AsNoTracking()
+                .Where(u => u.UsuarioId == usuarioId)
+                .SelectMany(u => _db.Permisos.AsNoTracking()
+                    .Where(p => p.RolId == u.RolId)
+                    .Select(p => new PermisoRolDto
+                    {
+                        ModuloId = p.ModuloId,
+                        PuedeVer = p.PuedeVer,
+                        PuedeCrear = p.PuedeCrear,
+                        PuedeEditar = p.PuedeEditar,
+                        PuedeElim = p.PuedeElim,
+                        PuedeExport = p.PuedeExport
+                    }))
+                .ToListAsync(ct);
+
+            var userInfo = await _db.Usuarios.AsNoTracking()
+                .Where(u => u.UsuarioId == usuarioId)
+                .Select(u => new { u.UsuarioId, u.RolId })
+                .FirstOrDefaultAsync(ct);
+            if (userInfo != null)
+            {
+                dto.UsuarioId = userInfo.UsuarioId;
+                dto.RolId = userInfo.RolId;
+            }
+
+            dto.PermisosRol = permisos;
+        }
+
+        return dto;
+    }
+
+    private async Task<DashboardCountsDto> BuildDashboardCountsAsync(CancellationToken ct)
+    {
+        var ingresos = await _db.MovimientosFinancieros.AsNoTracking()
+            .Where(m => m.Tipo == "Ingreso")
+            .SumAsync(m => (decimal?)m.Monto, ct) ?? 0m;
+        var egresos = await _db.MovimientosFinancieros.AsNoTracking()
+            .Where(m => m.Tipo == "Egreso")
+            .SumAsync(m => (decimal?)m.Monto, ct) ?? 0m;
+
+        return new DashboardCountsDto
+        {
+            Roles = await _db.Roles.AsNoTracking().CountAsync(ct),
+            Usuarios = await _db.Usuarios.AsNoTracking().CountAsync(ct),
+            Empleados = await _db.Empleados.AsNoTracking().CountAsync(ct),
+            EmpleadosActivos = await _db.Empleados.AsNoTracking().CountAsync(e => e.Activo, ct),
+            Clientes = await _db.Clientes.AsNoTracking().CountAsync(ct),
+            Proveedores = await _db.Proveedores.AsNoTracking().CountAsync(ct),
+            ProveedoresActivos = await _db.Proveedores.AsNoTracking().CountAsync(p => p.Activo, ct),
+            Compras = await _db.OrdenesCompra.AsNoTracking().CountAsync(ct),
+            Productos = await _db.Productos.AsNoTracking().CountAsync(ct),
+            ProductosActivos = await _db.Productos.AsNoTracking().CountAsync(p => p.Activo, ct),
+            StockAlerts = await _db.Productos.AsNoTracking().CountAsync(p => p.Activo && p.Stock <= p.StockMinimo, ct),
+            Pedidos = await _db.Pedidos.AsNoTracking().CountAsync(ct),
+            PedidosActivos = await _db.Pedidos.AsNoTracking().CountAsync(p => p.Estado != "Cancelado", ct),
+            Licitaciones = await _db.Licitaciones.AsNoTracking().CountAsync(ct),
+            LicitacionesGanadas = await _db.Licitaciones.AsNoTracking().CountAsync(l => l.Estado == "adjudicado", ct),
+            Ingresos = ingresos,
+            Egresos = egresos,
+            Balance = ingresos - egresos
+        };
+    }
+
     public async Task<SpaBootstrapDto> ObtenerBootstrapAsync(int usuarioId = 0, CancellationToken ct = default)
     {
         var dto = new SpaBootstrapDto();
@@ -49,9 +129,13 @@ public class SpaDataService
             }).ToListAsync(ct);
 
         var roles = await _db.Roles.AsNoTracking().OrderBy(r => r.RolId).ToListAsync(ct);
+        var userCountsByRol = await _db.Usuarios.AsNoTracking()
+            .GroupBy(u => u.RolId)
+            .Select(g => new { RolId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.RolId, x => x.Count, ct);
         foreach (var r in roles)
         {
-            var n = await _db.Usuarios.CountAsync(u => u.RolId == r.RolId, ct);
+            userCountsByRol.TryGetValue(r.RolId, out var n);
             dto.Roles.Add(new RolClienteDto
             {
                 Id = r.RolId,

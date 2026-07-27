@@ -85,13 +85,23 @@ SGE.Export = {
     downloadExcelHtml(filename, title, innerTablesHtml) {
         const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
 <head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+<!--[if gte mso 9]><xml>
+  <x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+    <x:Name>${escapeHtml(title).slice(0, 31)}</x:Name>
+    <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+  </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>
+</xml><![endif]-->
 <style>
-  table { border-collapse: collapse; }
-  th, td { border: 1px solid #94a3b8; padding: 6px 8px; font-size: 11px; }
-  th { background: #1e3a5f; color: #fff; font-weight: 600; }
+  body { font-family: 'Segoe UI', Calibri, sans-serif; }
+  table { border-collapse: collapse; width: 100%; margin: 4px 0 20px 0; }
+  th, td { border: 1px solid #c8cde8; padding: 6px 9px; font-size: 11px; mso-number-format:'\\@'; }
+  th { background: #1C2260; color: #ffffff; font-weight: 700; text-align: left; }
+  td.num, th.num { mso-number-format:'#,##0.00'; text-align: right; }
+  tbody tr:nth-child(even) td { background: #f4f5fc; }
+  caption, h2 { text-align: left; }
 </style></head><body>
-  <h2 style="font-family:Segoe UI,sans-serif;color:#1C2260;">${escapeHtml(title)}</h2>
-  <p style="font-family:Segoe UI,sans-serif;font-size:11px;color:#64748b;">${escapeHtml(new Date().toLocaleString('es-CR'))}</p>
+  <h2 style="font-family:'Segoe UI',sans-serif;color:#1C2260;">${escapeHtml(title)}</h2>
+  <p style="font-family:'Segoe UI',sans-serif;font-size:11px;color:#5a5f8a;">Generado: ${escapeHtml(new Date().toLocaleString('es-CR'))}</p>
   ${innerTablesHtml}
 </body></html>`;
         const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
@@ -105,7 +115,7 @@ SGE.Export = {
 
     buildTable(caption, colLabels, rows, numericCols = []) {
         const numSet = new Set(numericCols);
-        const th = colLabels.map((l) => `<th>${escapeHtml(l)}</th>`).join('');
+        const th = colLabels.map((l, i) => `<th${numSet.has(i) ? ' class="num"' : ''}>${escapeHtml(l)}</th>`).join('');
         const body = rows.map((row) => {
             const cells = row.map((cell, i) => {
                 const cls = numSet.has(i) ? ' class="num"' : '';

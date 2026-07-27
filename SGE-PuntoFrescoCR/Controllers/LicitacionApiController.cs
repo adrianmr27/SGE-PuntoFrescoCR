@@ -10,7 +10,7 @@ public class LicitacionApiController : BaseSpaApiController
     private readonly ILicitacionService _service;
     private readonly IWebHostEnvironment _env;
 
-    public LicitacionApiController(ILicitacionService service, IPermisoService permisoService, IWebHostEnvironment env) : base(permisoService)
+    public LicitacionApiController(ILicitacionService service, IPermisoService permisoService, IWebHostEnvironment env, AuditoriaService auditoria) : base(permisoService, auditoria)
     {
         _service = service;
         _env = env;

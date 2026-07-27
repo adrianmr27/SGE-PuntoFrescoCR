@@ -134,14 +134,16 @@ const Router = (() => {
     if (breadcrumb && navLabel) breadcrumb.textContent = navLabel.textContent;
 
     const main = document.getElementById('main-content');
-    main.style.opacity = '0';
-    /* No usar transform aquí: rompe position:fixed de los modales dentro del main */
-
-    await new Promise(r => setTimeout(r, 150));
+    const isFirstPaint = !main.dataset.viewLoaded;
+    if (!isFirstPaint) {
+      main.style.opacity = '0';
+      await new Promise(r => setTimeout(r, 150));
+    }
 
     if (views[id]) {
       main.innerHTML = await views[id](params);
-      main.style.transition = 'opacity .3s ease';
+      main.dataset.viewLoaded = '1';
+      main.style.transition = isFirstPaint ? 'none' : 'opacity .3s ease';
       main.style.opacity = '1';
       try {
         sessionStorage.setItem(VIEW_SESSION_KEY, id);
@@ -200,30 +202,74 @@ const Modal = (() => {
 
 /* ── Toast Manager ─────────────────────────────────── */
 const Toast = (() => {
-  const show = (msg, type = 'success') => {
-    if (type === 'error' && typeof Swal !== 'undefined') {
-      Swal.fire({ icon: 'error', title: 'Error', text: String(msg || 'Ocurrió un problema.') });
-      return;
-    }
-    if (type === 'info' && typeof Swal !== 'undefined') {
-      Swal.fire({ icon: 'info', title: 'Información', text: String(msg || '') });
-      return;
-    }
+  const MAX_TOASTS = 4;
+  const DURATION_MS = 4200;
+  const ICONS = {
+    success: 'bi-check-circle-fill',
+    warning: 'bi-exclamation-triangle-fill',
+    info: 'bi-info-circle-fill',
+    error: 'bi-x-circle-fill'
+  };
+
+  const getContainer = () => {
     let container = document.querySelector('.toast-container');
     if (!container) {
       container = document.createElement('div');
       container.className = 'toast-container';
+      // Región viva para que lectores de pantalla anuncien los mensajes
+      container.setAttribute('aria-live', 'polite');
+      container.setAttribute('aria-atomic', 'false');
       document.body.appendChild(container);
     }
+    return container;
+  };
+
+  const dismiss = (toast) => {
+    if (!toast || toast.dataset.closing) return;
+    toast.dataset.closing = '1';
+    if (toast._timer) clearTimeout(toast._timer);
+    toast.style.animation = 'toastOut .3s var(--transition-slow) forwards';
+    setTimeout(() => toast.remove(), 300);
+  };
+
+  const show = (msg, type = 'success') => {
+    // Errores e información relevante se muestran como modal bloqueante (SweetAlert2)
+    if ((type === 'error' || type === 'info') && typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: type,
+        title: type === 'error' ? 'Error' : 'Información',
+        text: String(msg || (type === 'error' ? 'Ocurrió un problema.' : ''))
+      });
+      return;
+    }
+
+    const container = getContainer();
+
+    // Evita saturar la pantalla: limita cantidad de toasts visibles simultáneamente
+    const existing = container.querySelectorAll('.toast');
+    if (existing.length >= MAX_TOASTS) dismiss(existing[0]);
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
+    toast.setAttribute('role', type === 'warning' ? 'alert' : 'status');
     toast.innerHTML = `
-      <span class="toast-icon"><i class="bi ${type === 'success' ? 'bi-check-circle-fill' : type === 'error' ? 'bi-x-circle-fill' : 'bi-info-circle-fill'}" aria-hidden="true"></i></span>
+      <span class="toast-icon"><i class="bi ${ICONS[type] || ICONS.info}" aria-hidden="true"></i></span>
       <span class="toast-msg">${msg}</span>
+      <button type="button" class="toast-close" aria-label="Cerrar notificación"><i class="bi bi-x" aria-hidden="true"></i></button>
     `;
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3600);
+
+    toast.querySelector('.toast-close').addEventListener('click', () => dismiss(toast));
+
+    const schedule = () => { toast._timer = setTimeout(() => dismiss(toast), DURATION_MS); };
+    schedule();
+    // Pausa el auto-cierre mientras el usuario lee/interactúa con el toast
+    toast.addEventListener('mouseenter', () => clearTimeout(toast._timer));
+    toast.addEventListener('mouseleave', schedule);
+    toast.addEventListener('focusin', () => clearTimeout(toast._timer));
+    toast.addEventListener('focusout', schedule);
+
+    return toast;
   };
 
   return { show };
@@ -432,10 +478,26 @@ const DB = {
   permisosRol: [],
   predicciones: [],
   notificaciones: [],
-  reportes: {}
+  reportes: {},
+  dashboardCounts: null
 };
 
-window.SGE = { Router, Modal, Toast, DB, fmt, initView, initSidebar, canAccessView, hideUnauthorizedActions, loadPartialView, VIEW_SESSION_KEY, sortTableRows };
+function showLoadingSkeleton() {
+  const main = document.getElementById('main-content');
+  if (!main || main.innerHTML.trim()) return;
+  main.innerHTML = `
+<div class="app-loading-skeleton" aria-busy="true" aria-label="Cargando panel">
+  <div class="skel-bar lg"></div>
+  <div class="skel-bar md"></div>
+  <div class="skel-grid">
+    <div class="skel-card"></div><div class="skel-card"></div>
+    <div class="skel-card"></div><div class="skel-card"></div>
+    <div class="skel-card"></div><div class="skel-card"></div>
+  </div>
+</div>`;
+}
+
+window.SGE = { Router, Modal, Toast, DB, fmt, initView, initSidebar, canAccessView, hideUnauthorizedActions, loadPartialView, VIEW_SESSION_KEY, sortTableRows, showLoadingSkeleton };
 // Aplica permisos de rol: bloquea módulos sin permiso (visible pero no clickeable)
 SGE.applyPermissions = function () {
   try {

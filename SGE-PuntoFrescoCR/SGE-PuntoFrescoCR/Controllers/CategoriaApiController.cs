@@ -7,7 +7,7 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class CategoriaApiController : BaseSpaApiController
 {
     private readonly SpaCrudService _service;
-    public CategoriaApiController(SpaCrudService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public CategoriaApiController(SpaCrudService service, IPermisoService permisoService, AuditoriaService auditoriaService) : base(permisoService, auditoriaService) => _service = service;
 
     [HttpPost("categorias")]
     public async Task<ActionResult<int>> PostCategoria([FromBody] CategoriaCreateDto dto, CancellationToken ct)

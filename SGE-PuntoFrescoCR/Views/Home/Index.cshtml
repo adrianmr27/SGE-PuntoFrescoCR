@@ -178,7 +178,6 @@
     <script src="~/js/modules/inventario.js" asp-append-version="true"></script>
     <!-- Sprint 3 Adrián -->
     <script src="~/js/modules/pedidos.js" asp-append-version="true"></script>
-    <script src="~/js/modules/dashboard.js" asp-append-version="true"></script>
     <!-- Sprint 3 minorg97u -->
     <!-- Sprint 3 JoseAcuna -->
     <script src="~/js/modules/licitaciones.js" asp-append-version="true"></script>
@@ -197,16 +196,34 @@
     SGE.Modal.init();
     SGE.initSidebar();
     if (typeof SGE.Notifications?.init === 'function') SGE.Notifications.init();
-    const ok = await SGE.Api.loadBootstrap();
-    if (ok) {
+    SGE.showLoadingSkeleton();
+
+    let start = 'dashboard';
+    try {
+      const saved = sessionStorage.getItem(SGE.VIEW_SESSION_KEY || 'sge_spa_view');
+      if (saved && typeof SGE.canAccessView === 'function' && SGE.canAccessView(saved)) start = saved;
+    } catch (_) { /* ignore */ }
+
+    const shellOk = await SGE.Api.loadShell();
+    if (shellOk) {
       SGE.applyPermissions();
-      let start = 'dashboard';
-      try {
-        const saved = sessionStorage.getItem(SGE.VIEW_SESSION_KEY || 'sge_spa_view');
-        if (saved && typeof SGE.canAccessView === 'function' && SGE.canAccessView(saved)) start = saved;
-      } catch (_) { /* ignore */ }
       await SGE.Router.navigate(start);
+    } else {
+      const ok = await SGE.Api.loadBootstrap();
+      if (!ok) return;
+      SGE.applyPermissions();
+      await SGE.Router.navigate(start);
+      return;
     }
+
+    SGE.Api.loadBootstrap().then(async (ok) => {
+      if (!ok) return;
+      SGE.applyPermissions();
+      const current = typeof SGE.Router.current === 'function' ? SGE.Router.current() : null;
+      if (current && typeof SGE.Router.refresh === 'function') {
+        await SGE.Router.refresh();
+      }
+    });
   });
 </script>
 </body>

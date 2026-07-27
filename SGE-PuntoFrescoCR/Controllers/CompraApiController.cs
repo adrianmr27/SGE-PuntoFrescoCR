@@ -7,7 +7,7 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class CompraApiController : BaseSpaApiController
 {
     private readonly ICompraService _service;
-    public CompraApiController(ICompraService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public CompraApiController(ICompraService service, IPermisoService permisoService, AuditoriaService auditoria) : base(permisoService, auditoria) => _service = service;
 
     [HttpPost("ordenes-compra")]
     public async Task<ActionResult<int>> PostOrdenCompra([FromBody] OrdenCompraCreateDto dto, CancellationToken ct)

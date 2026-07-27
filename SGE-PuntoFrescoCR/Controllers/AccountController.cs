@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SGE_PuntoFrescoCRBLL.Dtos;
 using SGE_PuntoFrescoCRBLL.Services;
 
@@ -14,12 +15,14 @@ public class AccountController : Controller
     private readonly AuthService _auth;
     private readonly IWebHostEnvironment _env;
     private readonly IEmailNotificacionService _email;
+    private readonly AuditoriaService _auditoria;
 
-    public AccountController(AuthService auth, IWebHostEnvironment env, IEmailNotificacionService email)
+    public AccountController(AuthService auth, IWebHostEnvironment env, IEmailNotificacionService email, AuditoriaService auditoria)
     {
         _auth = auth;
         _env = env;
         _email = email;
+        _auditoria = auditoria;
     }
 
     [HttpGet]
@@ -33,6 +36,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromForm] string usuario, [FromForm] string password, string? returnUrl, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrEmpty(password))
@@ -117,6 +121,7 @@ public class AccountController : Controller
 
         await SignInUsuarioAsync(u, ct);
         await _auth.RegistrarAccesoAsync(u.UsuarioId, ct);
+        await _auditoria.RegistrarAsync(u.UsuarioId, u.NombreUsuario, "PASSWORD_CAMBIO_OBLIGATORIO", "Usuario", u.UsuarioId.ToString(), ct: ct);
 
         return RedirectToAction("Index", "Home");
     }
@@ -145,7 +150,11 @@ public class AccountController : Controller
     [Authorize]
     public async Task<IActionResult> Logout()
     {
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var nombreUsuario = User.FindFirstValue("usuario") ?? User.Identity?.Name;
+        int.TryParse(idClaim, out var usuarioId);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await _auditoria.RegistrarAsync(usuarioId > 0 ? usuarioId : null, nombreUsuario, "LOGOUT", "Usuario", idClaim);
         return RedirectToAction(nameof(Login));
     }
 
@@ -156,6 +165,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Recover(string correo, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(correo) || !correo.Contains('@'))
@@ -166,6 +176,7 @@ public class AccountController : Controller
 
         var correoTrim = correo.Trim();
         var (ok, token) = await _auth.SolicitarRecuperacionAsync(correoTrim, ct);
+        await _auditoria.RegistrarAsync(null, correoTrim, ok ? "RECUPERACION_SOLICITADA" : "RECUPERACION_CORREO_DESCONOCIDO", "Usuario", detalle: correoTrim, ct: ct);
         if (!ok)
         {
             ViewData["Error"] = "No encontramos una cuenta con ese correo.";
@@ -636,6 +647,7 @@ Este es un mensaje automático, por favor no responder.
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ResetPassword([FromForm] string correo, [FromForm] string token,
         [FromForm] string nuevaPassword, CancellationToken ct)
     {
@@ -649,6 +661,7 @@ Este es un mensaje automático, por favor no responder.
         }
 
         var ok = await _auth.RestablecerPasswordAsync(correo.Trim(), token.Trim(), nuevaPassword, ct);
+        await _auditoria.RegistrarAsync(null, correo.Trim(), ok ? "PASSWORD_RESTABLECIDA" : "PASSWORD_RESET_TOKEN_INVALIDO", "Usuario", ct: ct);
         if (!ok)
         {
             ViewBag.ResetCorreo = correo.Trim();

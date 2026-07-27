@@ -19,7 +19,7 @@ ${alertas.length ? `
   <span class="alert-banner-icon stat-icon-bi" style="font-size:1.2rem;"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
   <div class="alert-banner-body">
     <div class="alert-banner-title">Stock bajo detectado</div>
-    ${alertas.map(p=>`<strong>${p.nombre}</strong> (${p.stock} unid.) `).join(' · ')} — Se recomienda generar una orden de compra.
+    ${alertas.map(p=>`<strong>${SGE.Export.escapeHtml(p.nombre)}</strong> (${p.stock} unid.) `).join(' · ')} — Se recomienda generar una orden de compra.
   </div>
 </div>` : ''}
 
@@ -59,7 +59,7 @@ ${alertas.length ? `
             const oid = c.orden_compra_id;
             return `<tr data-fecha="${c.fecha}">
               <td><code style="background:var(--surface-alt);padding:2px 7px;border-radius:4px;font-size:.8rem;font-weight:700;">${c.id}</code></td>
-              <td class="td-name">${c.proveedor}</td>
+              <td class="td-name">${SGE.Export.escapeHtml(c.proveedor)}</td>
               <td style="color:var(--text-muted);font-size:.82rem;">${SGE.fmt.date(c.fecha)}</td>
               <td><span class="badge ${estadoClass}">${c.estado}</span></td>
               <td><span class="badge badge-navy"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>${c.items}</span></td>
@@ -103,7 +103,7 @@ ${alertas.length ? `
           <label class="form-label">Proveedor <span>*</span></label>
           <select class="form-control" id="compra-prov">
             <option value="">Seleccione proveedor...</option>
-            ${SGE.DB.proveedores.filter(p=>p.estado==='Activo').map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}
+            ${SGE.DB.proveedores.filter(p=>p.estado==='Activo').map(p=>`<option value="${p.id}">${SGE.Export.escapeHtml(p.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -205,7 +205,7 @@ SGE.Com = {
         <option value="">Seleccione producto...</option>
         ${SGE.DB.productos.filter(p=>p.estado==='Activo').map(p=>{
           const iva = (parseFloat(String(p.iva).replace('%','')) || 13);
-          return `<option value="${p.id}" data-precio="${p.precio_compra}" data-iva="${iva}">${p.nombre}</option>`;
+          return `<option value="${p.id}" data-precio="${p.precio_compra}" data-iva="${iva}">${SGE.Export.escapeHtml(p.nombre)}</option>`;
         }).join('')}
       </select>
       <input class="form-control" type="number" min="1" value="1" style="font-size:.82rem;" oninput="SGE.Com.calcTotals()">
@@ -290,9 +290,9 @@ SGE.Com = {
         <span class="badge ${eCls}" style="font-size:.8rem;">${(d && d.estado) || oc.estado}</span>
       </div>
       <div class="info-grid">
-        <div class="info-item"><div class="info-label">Proveedor</div><div class="info-value">${(d && d.proveedor) || oc.proveedor}</div></div>
+        <div class="info-item"><div class="info-label">Proveedor</div><div class="info-value">${SGE.Export.escapeHtml((d && d.proveedor) || oc.proveedor)}</div></div>
         <div class="info-item"><div class="info-label">Fecha</div><div class="info-value">${SGE.fmt.date((d && d.fechaOrden) || oc.fecha)}</div></div>
-        ${d && d.observaciones ? `<div class="info-item col-span-2"><div class="info-label">Observaciones</div><div class="info-value">${d.observaciones}</div></div>` : ''}
+        ${d && d.observaciones ? `<div class="info-item col-span-2"><div class="info-label">Observaciones</div><div class="info-value">${SGE.Export.escapeHtml(d.observaciones)}</div></div>` : ''}
         <div class="info-item"><div class="info-label">Subtotal</div><div class="info-value">${d ? SGE.fmt.currency(d.subtotal) : '—'}</div></div>
         <div class="info-item"><div class="info-label">IVA</div><div class="info-value">${d ? SGE.fmt.currency(d.montoIVA) : '—'}</div></div>
         <div class="info-item"><div class="info-label">Total</div><div class="info-value" style="font-size:1.1rem;font-weight:800;color:var(--navy);">${SGE.fmt.currency((d && d.total) != null ? d.total : oc.total)}</div></div>
@@ -351,7 +351,6 @@ SGE.Com = {
     document.getElementById('btn-confirm-oc').onclick = async () => {
       try {
         await SGE.Api.mutations.confirmarOrdenCompra(ordenCompraId);
-        await SGE.Api.reloadAfterMutation();
         SGE.Modal.close('modal-confirm-oc');
         SGE.Toast.show('Orden confirmada. Inventario actualizado.');
         SGE.Router.navigate('compras');
@@ -365,7 +364,6 @@ SGE.Com = {
   cancel: async (ordenCompraId) => {
     try {
       await SGE.Api.mutations.cancelarOrdenCompra(ordenCompraId);
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Orden cancelada', 'error');
       SGE.Router.navigate('compras');
     } catch (e) {
@@ -407,7 +405,6 @@ SGE.Com = {
       } else {
         await SGE.Api.mutations.postOrdenCompra(payload);
       }
-      await SGE.Api.reloadAfterMutation();
       SGE.Modal.close('modal-compra');
       SGE.Toast.show(SGE.Com._editOrdenCompraId ? 'Orden de compra actualizada' : 'Orden de compra registrada');
       SGE.Com._editOrdenCompraId = null;

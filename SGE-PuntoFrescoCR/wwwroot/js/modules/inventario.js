@@ -22,7 +22,7 @@ ${alertas.length ? `
   <span class="alert-banner-icon stat-icon-bi" style="font-size:1.25rem;"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
   <div class="alert-banner-body">
     <div class="alert-banner-title"><i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>${alertas.length} producto(s) con stock crítico</div>
-    ${alertas.map(p=>`<span style="margin-right:.5rem;"><strong>${p.nombre}</strong>: ${p.stock} unid. (mín: ${p.stock_min})</span>`).join('')}
+    ${alertas.map(p=>`<span style="margin-right:.5rem;"><strong>${SGE.Export.escapeHtml(p.nombre)}</strong>: ${p.stock} unid. (mín: ${p.stock_min})</span>`).join('')}
   </div>
 </div>` : ''}
 
@@ -118,8 +118,8 @@ ${alertas.length ? `
                 : '<i class="bi bi-circle-fill me-1" style="font-size:.45rem;vertical-align:.15em;color:var(--green-dark);" aria-hidden="true"></i>';
             return `<tr data-fecha="${p.fecha}">
               <td style="color:var(--text-muted)">${p.id}</td>
-              <td class="td-name">${p.nombre}</td>
-              <td><span class="badge badge-info">${p.categoria}</span></td>
+              <td class="td-name">${SGE.Export.escapeHtml(p.nombre)}</td>
+              <td><span class="badge badge-info">${SGE.Export.escapeHtml(p.categoria)}</span></td>
               <td style="font-size:.82rem;">${SGE.fmt.currency(p.precio_compra)}</td>
               <td style="font-weight:600;">${SGE.fmt.currency(p.precio_venta)}</td>
               <td><span class="badge badge-navy">${p.iva}</span></td>
@@ -162,7 +162,7 @@ ${alertas.length ? `
           <label class="form-label">Categoría <span>*</span></label>
           <select class="form-control" id="prod-cat">
             <option value="">Seleccione...</option>
-            ${(SGE.DB.categorias || []).map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+            ${(SGE.DB.categorias || []).map(c => `<option value="${c.id}">${SGE.Export.escapeHtml(c.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -176,7 +176,7 @@ ${alertas.length ? `
         <div class="form-group">
           <label class="form-label">Tipo de Impuesto <span>*</span></label>
           <select class="form-control" id="prod-iva">
-            ${(SGE.DB.parametrosIva || []).map(p=>`<option value="${p.id}">${p.nombre} (${p.valor})</option>`).join('')}
+            ${(SGE.DB.parametrosIva || []).map(p=>`<option value="${p.id}">${SGE.Export.escapeHtml(p.nombre)} (${p.valor})</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -300,7 +300,6 @@ SGE.Inv = {
         return;
       }
       await SGE.Api.mutations.postCategoria({ nombre });
-      await SGE.Api.reloadAfterMutation();
       SGE.Modal.close('modal-categoria');
       SGE.Toast.show('Categoría creada');
       // Volver a la vista de inventario para recargar listas y selects
@@ -378,7 +377,6 @@ SGE.Inv = {
       } else {
         await SGE.Api.mutations.postProducto(body);
       }
-      await SGE.Api.reloadAfterMutation();
       SGE.Modal.close('modal-producto');
       SGE.Toast.show('Producto guardado');
       SGE.Router.navigate('inventario');
@@ -403,7 +401,6 @@ SGE.Inv = {
     };
     try {
       await SGE.Api.mutations.putProducto(id, body);
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Estado actualizado');
       SGE.Router.navigate('inventario');
     } catch (e) {

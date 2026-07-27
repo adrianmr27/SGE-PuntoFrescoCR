@@ -16,6 +16,7 @@ public class SgePuntoFrescoDbContext : DbContext
     public DbSet<Modulo> Modulos => Set<Modulo>();
     public DbSet<Permiso> Permisos => Set<Permiso>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Auditoria> Auditorias => Set<Auditoria>();
     public DbSet<Area> Areas => Set<Area>();
     public DbSet<Empleado> Empleados => Set<Empleado>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
@@ -78,6 +79,12 @@ public class SgePuntoFrescoDbContext : DbContext
             e.ToTable("Usuario", "seg", t => t.UseSqlOutputClause(false));
             e.HasKey(x => x.UsuarioId);
             e.HasOne(x => x.Rol).WithMany(r => r.Usuarios).HasForeignKey(x => x.RolId).OnDelete(restrict);
+        });
+
+        modelBuilder.Entity<Auditoria>(e =>
+        {
+            e.ToTable("Auditoria", "seg", t => t.UseSqlOutputClause(false));
+            e.HasKey(x => x.AuditoriaId);
         });
 
         modelBuilder.Entity<Area>(e =>

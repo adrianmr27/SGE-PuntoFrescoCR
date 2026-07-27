@@ -29,7 +29,7 @@ ${proxFechas.length ? `
   <span class="alert-banner-icon stat-icon-bi" style="font-size:1.25rem;"><i class="bi bi-calendar-event" aria-hidden="true"></i></span>
   <div class="alert-banner-body">
     <div class="alert-banner-title"><i class="bi bi-bell me-1" aria-hidden="true"></i>Fechas clave próximas (próximos 7 días)</div>
-    ${proxFechas.map(l => `<strong>${l.institucion}</strong> — Envío oferta: ${SGE.fmt.date(l.fecha_oferta)}`).join(' · ')}
+    ${proxFechas.map(l => `<strong>${SGE.Export.escapeHtml(l.institucion)}</strong> — Envío oferta: ${SGE.fmt.date(l.fecha_oferta)}`).join(' · ')}
   </div>
 </div>` : ''}
 
@@ -92,7 +92,7 @@ ${proxFechas.length ? `
             return `<tr data-fecha="${fd}">
               <td><code style="background:var(--surface-alt);padding:2px 7px;border-radius:4px;font-size:.8rem;font-weight:700;">${l.id}</code></td>
               <td>
-                <div class="td-name">${l.institucion}</div>
+                <div class="td-name">${SGE.Export.escapeHtml(l.institucion)}</div>
               </td>
               <td>
                 <span class="lic-status-badge ${estadoCls[l.estado]}">${estadoLabel[l.estado]}</span>
@@ -631,7 +631,6 @@ SGE.Lic = {
                 const okFlush = await SGE.Lic._flushPendingAfterSave(licId);
                 if (okFlush === false) return;
             }
-            await SGE.Api.reloadAfterMutation();
             SGE.Lic._editLicId = null;
             SGE.Modal.close('modal-licitacion');
             SGE.Toast.show('Licitación guardada');
@@ -736,7 +735,7 @@ SGE.Lic = {
         <span class="lic-status-badge ${estadoCls[uiEst]}">${estadoLabel[uiEst]}</span>
       </div>
       <div class="info-grid">
-        <div class="info-item col-span-2"><div class="info-label">Institución</div><div class="info-value" style="font-size:1rem;font-weight:700;">${(d && d.institucion) || l.institucion}</div></div>
+        <div class="info-item col-span-2"><div class="info-label">Institución</div><div class="info-value" style="font-size:1rem;font-weight:700;">${SGE.Export.escapeHtml((d && d.institucion) || l.institucion)}</div></div>
         <div class="info-item"><div class="info-label">Contacto</div><div class="info-value">${d ? [d.contactoNombre, d.contactoTelefono, d.contactoCorreo].filter(Boolean).join(' · ') || l.contacto : l.contacto}</div></div>
         <div class="info-item"><div class="info-label">Fecha Envío Oferta</div><div class="info-value">${SGE.fmt.date((d && d.fechaEnvioOferta) || l.fecha_oferta)}</div></div>
         <div class="info-item"><div class="info-label">Subtotal / IVA / Total</div><div class="info-value" style="font-size:1rem;font-weight:700;color:var(--navy);">${d ? `${SGE.fmt.currency(d.subtotal)} · ${SGE.fmt.currency(d.montoIVA)} · ${SGE.fmt.currency(d.totalOferta)}` : SGE.fmt.currency(l.total)}</div></div>
@@ -800,7 +799,6 @@ SGE.Lic = {
         }
         try {
             await SGE.Api.mutations.postLicitacionRecordatorio(SGE.Lic._selectedLicId, { titulo, fechaRecordatorio: fecha });
-            await SGE.Api.reloadAfterMutation();
             SGE.Modal.close('modal-lic-reminder-form');
             SGE.Toast.show('Recordatorio creado');
             const row = SGE.DB.licitaciones.find(x => x.licitacion_id === SGE.Lic._selectedLicId);
@@ -893,7 +891,6 @@ SGE.Lic = {
         if (!SGE.Lic.validateDocFile(file)) return;
         try {
             await SGE.Api.mutations.uploadLicitacionDocumento(SGE.Lic._selectedLicId, file, tipo);
-            await SGE.Api.reloadAfterMutation();
             SGE.Modal.close('modal-lic-upload');
             SGE.Toast.show('Archivo adjuntado');
             const row = SGE.DB.licitaciones.find(x => x.licitacion_id === SGE.Lic._selectedLicId);
@@ -908,7 +905,6 @@ SGE.Lic = {
         if (!SGE.Lic._selectedLicId) return;
         try {
             await SGE.Api.mutations.deleteLicitacionDocumento(SGE.Lic._selectedLicId, documentoId);
-            await SGE.Api.reloadAfterMutation();
             const row = SGE.DB.licitaciones.find(x => x.licitacion_id === SGE.Lic._selectedLicId);
             if (row) await SGE.Lic.view(row.id);
         } catch (e) {
@@ -920,7 +916,6 @@ SGE.Lic = {
         if (!SGE.Lic._selectedLicId) return;
         try {
             await SGE.Api.mutations.deleteLicitacionRecordatorio(SGE.Lic._selectedLicId, recordatorioId);
-            await SGE.Api.reloadAfterMutation();
             const row = SGE.DB.licitaciones.find(x => x.licitacion_id === SGE.Lic._selectedLicId);
             if (row) await SGE.Lic.view(row.id);
             if (typeof SGE.Notifications?.syncFromBootstrap === 'function') SGE.Notifications.syncFromBootstrap();
@@ -1027,21 +1022,21 @@ SGE.Lic = {
             const iva = st * pct;
             return [
                 ln.descripcion || '',
-                ln.cantidad,
-                SGE.fmt.currency(ln.precioUnitario),
+                Number(ln.cantidad || 0),
+                Number(ln.precioUnitario || 0).toFixed(2),
                 `${ln.porcentajeIVA ?? 13}%`,
-                SGE.fmt.currency(st),
-                SGE.fmt.currency(iva),
-                SGE.fmt.currency(st + iva)
+                st.toFixed(2),
+                iva.toFixed(2),
+                (st + iva).toFixed(2)
             ];
         });
         const t1 = SGE.Export.buildTable('Rubros / ítems',
             ['Descripción', 'Cant.', 'P. unit.', 'IVA', 'Subtotal', 'Monto IVA', 'Total línea'],
             rows,
-            [1, 2, 3, 4, 5, 6]);
+            [1, 2, 4, 5, 6]);
         const info = `<table style="margin-bottom:16px;font-size:11px;"><tr><td><b>Institución</b></td><td>${SGE.Export.escapeHtml(d.institucion)}</td></tr>
       <tr><td><b>Código</b></td><td>${SGE.Export.escapeHtml(row?.id || '')}</td></tr>
-      <tr><td><b>Total oferta</b></td><td>${SGE.Export.escapeHtml(SGE.fmt.currency(d.totalOferta))}</td></tr></table>`;
+      <tr><td><b>Total oferta</b></td><td>${Number(d.totalOferta || 0).toFixed(2)}</td></tr></table>`;
         SGE.Export.downloadExcelHtml(`${row?.id || 'licitacion'}_detalle.xls`, `Licitación ${row?.id || ''}`, info + t1);
     },
 

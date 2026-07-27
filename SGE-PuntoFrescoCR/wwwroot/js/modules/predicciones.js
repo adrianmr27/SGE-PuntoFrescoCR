@@ -35,7 +35,7 @@ SGE.Router.register('predicciones', () => {
       <thead><tr><th>Cliente</th><th>Producto</th><th>Veces</th><th>Prob. %</th><th>Confianza</th><th>Prom. u.</th></tr></thead>
       <tbody>
         ${preds.map(p => `<tr>
-          <td>${p.cliente}</td><td>${p.producto}</td><td>${p.veces}</td><td>${p.prob ?? '—'}</td><td>${p.confianza ?? '—'}</td><td>${p.promedio ?? '—'}</td>
+          <td>${SGE.Export.escapeHtml(p.cliente)}</td><td>${SGE.Export.escapeHtml(p.producto)}</td><td>${p.veces}</td><td>${p.prob ?? '—'}</td><td>${p.confianza ?? '—'}</td><td>${p.promedio ?? '—'}</td>
         </tr>`).join('')}
       </tbody>
     </table>
@@ -78,7 +78,7 @@ SGE.Router.register('predicciones', () => {
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <div style="font-weight:700;color:var(--navy);font-size:.9rem;"><i class="bi bi-search me-1" aria-hidden="true"></i>Analizar cliente:</div>
       <select class="filter-select" id="pred-cliente-sel" onchange="SGE.Pre.loadCliente(this.value)" style="min-width:260px;">
-        ${clientes.map((c,i) => `<option value="${c}" ${i===0?'selected':''}>${c}</option>`).join('')}
+        ${clientes.map((c,i) => `<option value="${SGE.Export.escapeHtml(c)}" ${i===0?'selected':''}>${SGE.Export.escapeHtml(c)}</option>`).join('')}
       </select>
       <div style="margin-left:auto;font-size:.8rem;color:var(--text-muted);">
         <i class="bi bi-graph-up me-1" aria-hidden="true"></i>Análisis basado en historial de compras registrado
@@ -97,7 +97,6 @@ SGE.Pre = {
   recalcular: async () => {
     try {
       await SGE.Api.mutations.recalcularPredicciones();
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Predicciones actualizadas');
       SGE.Router.navigate('predicciones');
     } catch (e) {
@@ -123,7 +122,7 @@ SGE.Pre = {
     <div style="display:flex;flex-direction:column;gap:1.25rem;">
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>Historial de Compras — <span style="font-size:.82rem;font-weight:400;color:var(--text-muted);">${cliente}</span></span>
+          <span class="card-title"><i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>Historial de Compras — <span style="font-size:.82rem;font-weight:400;color:var(--text-muted);">${SGE.Export.escapeHtml(cliente)}</span></span>
         </div>
         <div class="card-body" style="padding:.75rem 1.5rem;">
           ${historial.map(m=>`
@@ -151,7 +150,7 @@ SGE.Pre = {
             return `
             <div style="margin-bottom:.85rem;">
               <div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:.3rem;">
-                <span style="font-weight:600;">${prod}</span>
+                <span style="font-weight:600;">${SGE.Export.escapeHtml(prod)}</span>
                 <span style="color:var(--text-muted);">${cnt}/${totalMeses} meses · <strong style="color:var(--navy);">${pct}%</strong></span>
               </div>
               <div style="height:7px;background:var(--border);border-radius:99px;overflow:hidden;">
@@ -185,7 +184,7 @@ SGE.Pre = {
           <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem;background:var(--surface-alt);border-radius:var(--radius-sm);margin-bottom:.5rem;border-left:3px solid ${pct>=70?'var(--green)':pct>=40?'var(--teal)':'var(--border-strong)'};">
             <div style="width:32px;height:32px;border-radius:50%;background:${pct>=70?'rgba(40,167,69,.15)':pct>=40?'rgba(93,210,188,.2)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:${pct>=70?'var(--green-dark)':pct>=40?'#2ca892':'var(--text-muted)'};flex-shrink:0;">${i+1}</div>
             <div style="flex:1;">
-              <div style="font-weight:700;font-size:.85rem;margin-bottom:2px;">${prod}</div>
+              <div style="font-weight:700;font-size:.85rem;margin-bottom:2px;">${SGE.Export.escapeHtml(prod)}</div>
               <div style="font-size:.72rem;color:var(--text-muted);">Presente en ${cnt} de ${totalMeses} pedidos</div>
             </div>
             <div style="text-align:right;">
@@ -198,7 +197,7 @@ SGE.Pre = {
         <div style="margin-top:1.1rem;padding:.85rem;background:rgba(93,210,188,.08);border:1px solid rgba(93,210,188,.25);border-radius:var(--radius-md);font-size:.82rem;">
           <div style="font-weight:700;color:var(--navy);margin-bottom:.35rem;"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i>Recomendación de Inventario</div>
           <div style="color:var(--text-secondary);">
-            Asegúrese de tener stock suficiente de <strong>${patrones.slice(0,2).map(([p])=>p).join(' y ')}</strong> para el próximo pedido de este cliente.
+            Asegúrese de tener stock suficiente de <strong>${patrones.slice(0,2).map(([p])=>SGE.Export.escapeHtml(p)).join(' y ')}</strong> para el próximo pedido de este cliente.
           </div>
         </div>
 
@@ -227,18 +226,23 @@ SGE.Pre = {
     }
     const cli = document.getElementById('pred-cliente-sel')?.value || '';
     const historial = (SGE.DB.historialClientes || {})[cli] || [];
-    if (!historial.length) { SGE.Toast.show('No hay datos para exportar', 'error'); return; }
-    const rows = historial.map(h => [cli, h.mes, Number(h.total || 0).toFixed(2), (h.productos || []).join(' | ')]);
-    const t1 = SGE.Export.buildTable('Historial mensual', ['Cliente', 'Mes', 'Total CRC', 'Productos'], rows, [2]);
+    if (!historial.length) { SGE.Toast.show('No hay datos para exportar', 'warning'); return; }
     const preds = (SGE.DB.predicciones || []).filter(p => p.cliente === cli);
     const prow = preds.map(p => [p.producto, p.veces, p.prob ?? '—', p.confianza ?? '—', p.promedio ?? '—']);
-    const t2 = SGE.Export.buildTable('Modelo PrediccionCompra', ['Producto', 'Veces pedido', 'Prob. %', 'Confianza', 'Prom. u.'],
-      prow.length ? prow : [['—', '—', '—', '—', '—']], [1]);
-    const inner = t1 + t2;
     if (tipo === 'pdf') {
+      const rows = historial.map(h => [cli, h.mes, SGE.fmt.currency(h.total), (h.productos || []).join(' | ')]);
+      const t1 = SGE.Export.buildTable('Historial mensual', ['Cliente', 'Mes', 'Total', 'Productos'], rows, [2]);
+      const t2 = SGE.Export.buildTable('Modelo PrediccionCompra', ['Producto', 'Veces pedido', 'Prob. %', 'Confianza', 'Prom. u.'],
+        prow.length ? prow : [['—', '—', '—', '—', '—']], [1]);
+      const inner = t1 + t2;
       SGE.Export.openPrintDocument('Predicciones', SGE.Export.wrapLetterhead('Predicciones de demanda', `Cliente: ${cli}`, inner));
       return;
     }
+    const rows = historial.map(h => [cli, h.mes, Number(h.total || 0).toFixed(2), (h.productos || []).join(' | ')]);
+    const t1 = SGE.Export.buildTable('Historial mensual', ['Cliente', 'Mes', 'Total CRC', 'Productos'], rows, [2]);
+    const t2 = SGE.Export.buildTable('Modelo PrediccionCompra', ['Producto', 'Veces pedido', 'Prob. %', 'Confianza', 'Prom. u.'],
+      prow.length ? prow : [['—', '—', '—', '—', '—']], [1]);
+    const inner = t1 + t2;
     SGE.Export.downloadExcelHtml(`predicciones_${(cli || 'cliente').replace(/\s+/g, '_')}.xls`, `Predicciones — ${cli}`, inner);
   }
 };

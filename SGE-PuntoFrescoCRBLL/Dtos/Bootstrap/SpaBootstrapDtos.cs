@@ -30,6 +30,39 @@ public class SpaBootstrapDto
     public List<NotificacionClienteDto> Notificaciones { get; set; } = new();
 }
 
+/// <summary>Respuesta ligera para pintar el panel principal sin esperar el bootstrap completo.</summary>
+public class SpaShellDto
+{
+    public int UsuarioId { get; set; }
+    public int RolId { get; set; }
+    public List<ModuloClienteDto> Modulos { get; set; } = new();
+    public List<PermisoRolDto> PermisosRol { get; set; } = new();
+    public List<NotificacionClienteDto> Notificaciones { get; set; } = new();
+    public DashboardCountsDto Counts { get; set; } = new();
+}
+
+public class DashboardCountsDto
+{
+    public int Roles { get; set; }
+    public int Usuarios { get; set; }
+    public int Empleados { get; set; }
+    public int EmpleadosActivos { get; set; }
+    public int Clientes { get; set; }
+    public int Proveedores { get; set; }
+    public int ProveedoresActivos { get; set; }
+    public int Compras { get; set; }
+    public int Productos { get; set; }
+    public int ProductosActivos { get; set; }
+    public int StockAlerts { get; set; }
+    public int Pedidos { get; set; }
+    public int PedidosActivos { get; set; }
+    public int Licitaciones { get; set; }
+    public int LicitacionesGanadas { get; set; }
+    public decimal Ingresos { get; set; }
+    public decimal Egresos { get; set; }
+    public decimal Balance { get; set; }
+}
+
 public class NotificacionClienteDto
 {
     public string Id { get; set; } = "";

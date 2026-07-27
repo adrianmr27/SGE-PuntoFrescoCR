@@ -7,7 +7,7 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class ProveedorApiController : BaseSpaApiController
 {
     private readonly IProveedorService _service;
-    public ProveedorApiController(IProveedorService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public ProveedorApiController(IProveedorService service, IPermisoService permisoService, AuditoriaService auditoria) : base(permisoService, auditoria) => _service = service;
 
     [HttpPost("proveedores")]
     public async Task<ActionResult<int>> PostProveedor([FromBody] ProveedorCreateDto dto, CancellationToken ct)
@@ -16,7 +16,9 @@ public class ProveedorApiController : BaseSpaApiController
         try
         {
             var id = await _service.CreateProveedorAsync(dto, ct);
-            return id == null ? BadRequest() : Ok(id.Value);
+            if (id == null) return BadRequest();
+            await AuditarAsync("PROVEEDOR_CREADO", "Proveedor", id.Value.ToString(), dto.Nombre, ct);
+            return Ok(id.Value);
         }
         catch (InvalidOperationException ex)
         {
@@ -31,7 +33,9 @@ public class ProveedorApiController : BaseSpaApiController
         try
         {
             var ok = await _service.UpdateProveedorAsync(id, dto, ct);
-            return ok ? NoContent() : NotFound();
+            if (!ok) return NotFound();
+            await AuditarAsync("PROVEEDOR_EDITADO", "Proveedor", id.ToString(), ct: ct);
+            return NoContent();
         }
         catch (InvalidOperationException ex)
         {

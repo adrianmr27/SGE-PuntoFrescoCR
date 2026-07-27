@@ -90,9 +90,9 @@ SGE.Router.register('pedidos', () => `
     const eCls = { Borrador: 'badge-pending', Confirmado: 'badge-active', Entregado: 'badge-info', Cancelado: 'badge-danger' }[p.estado] || 'badge-navy';
     const estadoLbl = p.estado === 'Borrador' ? 'Borrador (pendiente)' : p.estado;
     const pid = p.pedido_id;
-    return `<tr data-fecha="${p.fecha}" data-estado="${p.estado}" data-id="${pid}" data-total="${p.total}" data-cliente="${(p.cliente || '').replace(/"/g, '&quot;')}">
+    return `<tr data-fecha="${p.fecha}" data-estado="${p.estado}" data-id="${pid}" data-total="${p.total}" data-cliente="${SGE.Export.escapeHtml(p.cliente)}">
               <td><code style="background:var(--surface-alt);padding:2px 7px;border-radius:4px;font-size:.8rem;font-weight:700;">${p.id}</code></td>
-              <td class="td-name">${p.cliente}</td>
+              <td class="td-name">${SGE.Export.escapeHtml(p.cliente)}</td>
               <td><span class="badge ${eCls}">${estadoLbl}</span></td>
               <td style="color:var(--text-muted);font-size:.82rem;">${SGE.fmt.date(p.fecha)}</td>
               <td><span class="badge badge-navy"><i class="bi bi-journal-text me-1" aria-hidden="true"></i>${p.items}</span></td>
@@ -138,7 +138,7 @@ SGE.Router.register('pedidos', () => `
           <label class="form-label">Cliente <span>*</span></label>
           <select class="form-control" id="ped-cliente" onchange="SGE.Ped.showClientInfo(this.value)">
             <option value="">Seleccione cliente...</option>
-            ${SGE.DB.clientes.filter(c => c.estado === 'Activo').map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+            ${SGE.DB.clientes.filter(c => c.estado === 'Activo').map(c => `<option value="${c.id}">${SGE.Export.escapeHtml(c.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -285,7 +285,7 @@ SGE.Ped = {
         <option value="">Seleccione producto...</option>
         ${SGE.DB.productos.filter(p => p.estado === 'Activo' && p.stock > 0).map(p => {
         const iv = parseFloat(String(p.iva).replace('%', '')) || 13;
-        return `<option value="${p.id}" data-precio="${p.precio_venta}" data-iva="${iv}">${p.nombre} (Stock: ${p.stock})</option>`;
+        return `<option value="${p.id}" data-precio="${p.precio_venta}" data-iva="${iv}">${SGE.Export.escapeHtml(p.nombre)} (Stock: ${p.stock})</option>`;
     }).join('')}
       </select>
       <input class="form-control" type="number" min="1" value="1" style="font-size:.82rem;" oninput="SGE.Ped.calcTotals()">
@@ -417,7 +417,7 @@ SGE.Ped = {
         <span class="badge ${eCls}">${estadoLbl}</span>
       </div>
       <div class="info-grid">
-        <div class="info-item"><div class="info-label">Cliente</div><div class="info-value">${(d && d.cliente) || ped.cliente}</div></div>
+        <div class="info-item"><div class="info-label">Cliente</div><div class="info-value">${SGE.Export.escapeHtml((d && d.cliente) || ped.cliente)}</div></div>
         <div class="info-item"><div class="info-label">Fecha</div><div class="info-value">${SGE.fmt.date((d && d.fechaPedido) || ped.fecha)}</div></div>
         ${(d && d.direccionEntrega) ? `<div class="info-item col-span-2"><div class="info-label">Dirección de entrega</div><div class="info-value">${d.direccionEntrega}</div></div>` : ''}
         ${cli ? `<div class="info-item"><div class="info-label">Teléfono</div><div class="info-value">${cli.telefono}</div></div>
@@ -517,7 +517,6 @@ SGE.Ped = {
     confirm: async (pedidoId) => {
         try {
             await SGE.Api.mutations.confirmarPedido(pedidoId);
-            await SGE.Api.reloadAfterMutation();
             SGE.Toast.show('Pedido confirmado');
             SGE.Router.navigate('pedidos');
         } catch (e) {
@@ -539,7 +538,6 @@ SGE.Ped = {
         if (!ok) return;
         try {
             await SGE.Api.mutations.entregarPedido(pedidoId);
-            await SGE.Api.reloadAfterMutation();
             SGE.Toast.show('Pedido marcado como entregado');
             SGE.Router.navigate('pedidos');
         } catch (e) {
@@ -564,7 +562,6 @@ SGE.Ped = {
         const motivo = document.getElementById('ped-cancel-motivo')?.value || '';
         try {
             await SGE.Api.mutations.cancelarPedido(pedidoId, motivo);
-            await SGE.Api.reloadAfterMutation();
             SGE.Modal.close('modal-pedido-cancel');
             SGE.Toast.show('Pedido cancelado', 'success');
             SGE.Router.navigate('pedidos');
@@ -601,7 +598,6 @@ SGE.Ped = {
             } else {
                 await SGE.Api.mutations.postPedido(body);
             }
-            await SGE.Api.reloadAfterMutation();
             SGE.Ped._editPedidoId = null;
             SGE.Modal.close('modal-pedido');
             SGE.Toast.show(wasEdit ? 'Pedido actualizado' : 'Pedido registrado (borrador). Confirme desde la tabla.');

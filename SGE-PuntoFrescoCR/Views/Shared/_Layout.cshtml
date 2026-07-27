@@ -27,6 +27,27 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
+
+                    <div class="d-flex align-items-center nav-right mt-2 mt-sm-0">
+                        <!-- Notification button -->
+                        <div class="nav-item dropdown me-2">
+                            <button id="header-notif-btn" type="button" class="btn btn-outline-secondary position-relative" aria-expanded="false" aria-controls="notif-dropdown">
+                                <i class="bi bi-bell" aria-hidden="true"></i>
+                                <span id="header-notif-count" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" hidden>0</span>
+                            </button>
+                            <div id="notif-dropdown" class="notif-dropdown dropdown-menu dropdown-menu-end" aria-hidden="true">
+                                <div id="notif-dropdown-body" class="p-2"></div>
+                                <div class="p-2 text-end"><button id="notif-clear-dismissed" type="button" class="btn btn-link btn-sm">Limpiar</button></div>
+                            </div>
+                        </div>
+
+                        <!-- Logout / profile -->
+                        <div class="nav-item">
+                            <a class="btn btn-link text-dark d-none d-sm-inline" asp-controller="Account" asp-action="Logout">Cerrar sesión</a>
+                            <!-- Small screen icon button -->
+                            <a class="btn btn-outline-secondary d-inline d-sm-none ms-2" asp-controller="Account" asp-action="Logout" title="Salir"><i class="bi bi-box-arrow-right"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -44,6 +65,12 @@
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Zona horaria por defecto de la aplicación en minutos (UTC-6)
+        window.APP_TIMEZONE_OFFSET_MINUTES = -6 * 60; // -360
+        // También expone la cadena de zona para uso en cliente
+        window.APP_TIMEZONE = "-06:00";
+    </script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

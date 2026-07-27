@@ -5,26 +5,39 @@ SGE.Router.register('dashboard', () => {
   const mods = SGE.DB.modulos || [];
   const perms = SGE.DB.permisosRol || [];
   const allowed = new Set(perms.filter(p => p.puedeVer).map(p => p.modulo_id));
+  const c = SGE.DB.dashboardCounts || {};
+  const countOf = (arr, key) => (Array.isArray(arr) && arr.length) ? arr.length : (c[key] ?? 0);
+  const sumMov = (tipo) => {
+    const arr = SGE.DB.movFinancieros || [];
+    if (arr.length) return arr.filter(m => m.tipo === tipo).reduce((s, m) => s + m.monto, 0);
+    return tipo === 'Ingreso' ? (c.ingresos ?? 0) : (c.egresos ?? 0);
+  };
 
-  const ingresos = (SGE.DB.movFinancieros || []).filter(m => m.tipo === 'Ingreso').reduce((s, m) => s + m.monto, 0);
-  const egresos = (SGE.DB.movFinancieros || []).filter(m => m.tipo === 'Egreso').reduce((s, m) => s + m.monto, 0);
-  const balance = ingresos - egresos;
-  const stockAlerts = (SGE.DB.productos || []).filter(p => p.stock <= p.stock_min && p.estado === 'Activo').length;
-  const prodsActivos = (SGE.DB.productos || []).filter(p => p.estado === 'Activo').length;
-  const pedidosActivos = (SGE.DB.pedidos || []).filter(p => p.estado !== 'Cancelado').length;
-  const licGanadas = (SGE.DB.licitaciones || []).filter(l => l.estado === 'adjudicado').length;
+  const ingresos = sumMov('Ingreso');
+  const egresos = sumMov('Egreso');
+  const balance = (SGE.DB.movFinancieros || []).length ? ingresos - egresos : (c.balance ?? ingresos - egresos);
+  const stockAlerts = (SGE.DB.productos || []).length
+    ? (SGE.DB.productos || []).filter(p => p.stock <= p.stock_min && p.estado === 'Activo').length
+    : (c.stockAlerts ?? 0);
+  const prodsActivos = countOf(SGE.DB.productos, 'productosActivos');
+  const pedidosActivos = (SGE.DB.pedidos || []).length
+    ? (SGE.DB.pedidos || []).filter(p => p.estado !== 'Cancelado').length
+    : (c.pedidosActivos ?? 0);
+  const licGanadas = (SGE.DB.licitaciones || []).length
+    ? (SGE.DB.licitaciones || []).filter(l => l.estado === 'adjudicado').length
+    : (c.licitacionesGanadas ?? 0);
 
   const meta = [
     { id: 'administrativo', icon: 'bi-building', name: 'Administrativo', bg: 'rgba(28,34,96,.08)', count: 'Config. general' },
-    { id: 'roles', icon: 'bi-key', name: 'Roles', bg: 'rgba(93,210,188,.15)', count: `${SGE.DB.roles.length} roles` },
-    { id: 'usuarios', icon: 'bi-people', name: 'Usuarios', bg: 'rgba(40,167,69,.1)', count: `${SGE.DB.usuarios.length} usuarios` },
-    { id: 'empleados', icon: 'bi-person-badge', name: 'Empleados', bg: 'rgba(255,112,118,.1)', count: `${SGE.DB.empleados.length} empleados` },
-    { id: 'clientes', icon: 'bi-globe2', name: 'Clientes', bg: 'rgba(93,210,188,.15)', count: `${SGE.DB.clientes.length} clientes` },
-    { id: 'proveedores', icon: 'bi-truck', name: 'Proveedores', bg: 'rgba(28,34,96,.08)', count: `${SGE.DB.proveedores.length} proveedores` },
-    { id: 'compras', icon: 'bi-cart3', name: 'Compras', bg: 'rgba(255,112,118,.1)', count: `${(SGE.DB.compras || []).length} órdenes` },
-    { id: 'inventario', icon: 'bi-box-seam', name: 'Inventario', bg: 'rgba(93,210,188,.15)', count: `${(SGE.DB.productos || []).length} productos` },
-    { id: 'pedidos', icon: 'bi-clipboard-check', name: 'Pedidos', bg: 'rgba(40,167,69,.1)', count: `${(SGE.DB.pedidos || []).length} pedidos` },
-    { id: 'licitaciones', icon: 'bi-file-earmark-text', name: 'Licitaciones', bg: 'rgba(28,34,96,.08)', count: `${(SGE.DB.licitaciones || []).length} procesos` },
+    { id: 'roles', icon: 'bi-key', name: 'Roles', bg: 'rgba(93,210,188,.15)', count: `${countOf(SGE.DB.roles, 'roles')} roles` },
+    { id: 'usuarios', icon: 'bi-people', name: 'Usuarios', bg: 'rgba(40,167,69,.1)', count: `${countOf(SGE.DB.usuarios, 'usuarios')} usuarios` },
+    { id: 'empleados', icon: 'bi-person-badge', name: 'Empleados', bg: 'rgba(255,112,118,.1)', count: `${countOf(SGE.DB.empleados, 'empleados')} empleados` },
+    { id: 'clientes', icon: 'bi-globe2', name: 'Clientes', bg: 'rgba(93,210,188,.15)', count: `${countOf(SGE.DB.clientes, 'clientes')} clientes` },
+    { id: 'proveedores', icon: 'bi-truck', name: 'Proveedores', bg: 'rgba(28,34,96,.08)', count: `${countOf(SGE.DB.proveedores, 'proveedores')} proveedores` },
+    { id: 'compras', icon: 'bi-cart3', name: 'Compras', bg: 'rgba(255,112,118,.1)', count: `${countOf(SGE.DB.compras, 'compras')} órdenes` },
+    { id: 'inventario', icon: 'bi-box-seam', name: 'Inventario', bg: 'rgba(93,210,188,.15)', count: `${countOf(SGE.DB.productos, 'productos')} productos` },
+    { id: 'pedidos', icon: 'bi-clipboard-check', name: 'Pedidos', bg: 'rgba(40,167,69,.1)', count: `${countOf(SGE.DB.pedidos, 'pedidos')} pedidos` },
+    { id: 'licitaciones', icon: 'bi-file-earmark-text', name: 'Licitaciones', bg: 'rgba(28,34,96,.08)', count: `${countOf(SGE.DB.licitaciones, 'licitaciones')} procesos` },
     { id: 'finanzas', icon: 'bi-cash-stack', name: 'Finanzas', bg: 'rgba(40,167,69,.1)', count: 'Control financiero' },
     { id: 'predicciones', icon: 'bi-cpu', name: 'Predicciones', bg: 'rgba(93,210,188,.15)', count: 'Análisis IA' },
     { id: 'reportes', icon: 'bi-graph-up-arrow', name: 'Reportes', bg: 'rgba(28,34,96,.08)', count: 'Dashboard ejecutivo' }
@@ -46,7 +59,7 @@ SGE.Router.register('dashboard', () => {
 
   const cobrosSnippet = (SGE.DB.cuentasCobrar || []).filter(c => c.estado === 'Pendiente').slice(0, 3).map(c => `
         <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.4rem;padding:.4rem .6rem;background:var(--surface-alt);border-radius:6px;">
-          <span style="color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">${c.cliente}</span>
+          <span style="color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">${SGE.Export.escapeHtml(c.cliente)}</span>
           <span style="font-weight:700;color:var(--navy);flex-shrink:0;margin-left:.5rem;">${SGE.fmt.currency(c.monto)}</span>
         </div>`).join('');
 
@@ -127,11 +140,11 @@ SGE.Router.register('dashboard', () => {
       </div>
       <div class="responsive-grid-2" style="gap:.75rem;">
         <div style="background:rgba(40,167,69,.08);border-radius:var(--radius-md);padding:.85rem;text-align:center;">
-          <div style="font-size:1.3rem;font-weight:800;color:var(--green);">${SGE.DB.empleados.filter(e => e.estado === 'Activo').length}</div>
+          <div style="font-size:1.3rem;font-weight:800;color:var(--green);">${(SGE.DB.empleados || []).length ? SGE.DB.empleados.filter(e => e.estado === 'Activo').length : (c.empleadosActivos ?? 0)}</div>
           <div style="font-size:.72rem;color:var(--text-muted);">Empleados activos</div>
         </div>
         <div style="background:rgba(93,210,188,.12);border-radius:var(--radius-md);padding:.85rem;text-align:center;">
-          <div style="font-size:1.3rem;font-weight:800;color:#2ca892;">${SGE.DB.proveedores.filter(p => p.estado === 'Activo').length}</div>
+          <div style="font-size:1.3rem;font-weight:800;color:#2ca892;">${(SGE.DB.proveedores || []).length ? SGE.DB.proveedores.filter(p => p.estado === 'Activo').length : (c.proveedoresActivos ?? 0)}</div>
           <div style="font-size:.72rem;color:var(--text-muted);">Proveedores activos</div>
         </div>
       </div>

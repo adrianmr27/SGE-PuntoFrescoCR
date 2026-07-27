@@ -233,8 +233,76 @@ function mapBootstrap(data) {
   };
 }
 
+function mapShell(data) {
+  const d = data || {};
+  const c = d.counts || {};
+  return {
+    modulos: (d.modulos || []).map(m => ({ id: m.id, codigo: m.codigo, nombre: m.nombre })),
+    permisosRol: (d.permisosRol || []).map(p => ({
+      modulo_id: p.moduloId,
+      puedeVer: p.puedeVer,
+      puedeCrear: p.puedeCrear,
+      puedeEditar: p.puedeEditar,
+      puedeElim: p.puedeElim,
+      puedeExport: p.puedeExport
+    })),
+    usuarioId: d.usuarioId || 0,
+    rolId: d.rolId || 0,
+    notificaciones: (d.notificaciones || []).map(n => ({
+      id: n.id,
+      tipo: n.tipo,
+      titulo: n.titulo,
+      mensaje: n.mensaje,
+      vista: n.vista,
+      ref: n.ref,
+      licitacion_id: n.licitacionId ?? null,
+      recordatorio_id: n.recordatorioId ?? null
+    })),
+    dashboardCounts: {
+      roles: c.roles ?? 0,
+      usuarios: c.usuarios ?? 0,
+      empleados: c.empleados ?? 0,
+      empleadosActivos: c.empleadosActivos ?? 0,
+      clientes: c.clientes ?? 0,
+      proveedores: c.proveedores ?? 0,
+      proveedoresActivos: c.proveedoresActivos ?? 0,
+      compras: c.compras ?? 0,
+      productos: c.productos ?? 0,
+      productosActivos: c.productosActivos ?? 0,
+      stockAlerts: c.stockAlerts ?? 0,
+      pedidos: c.pedidos ?? 0,
+      pedidosActivos: c.pedidosActivos ?? 0,
+      licitaciones: c.licitaciones ?? 0,
+      licitacionesGanadas: c.licitacionesGanadas ?? 0,
+      ingresos: c.ingresos ?? 0,
+      egresos: c.egresos ?? 0,
+      balance: c.balance ?? 0
+    }
+  };
+}
+
+async function loadShell() {
+  const res = await fetch('/api/spa/shell', { credentials: 'same-origin' });
+  if (res.status === 401) {
+    window.location.href = '/Account/Login';
+    return false;
+  }
+  if (!res.ok) {
+    return false;
+  }
+  const json = await res.json();
+  Object.assign(SGE.DB, mapShell(json));
+  if (typeof SGE.applyPermissions === 'function') SGE.applyPermissions();
+  if (typeof SGE.Notifications?.syncFromBootstrap === 'function') SGE.Notifications.syncFromBootstrap();
+  return true;
+}
+
 async function loadBootstrap() {
   const res = await fetch('/api/spa/bootstrap', { credentials: 'same-origin' });
+  if (res.status === 401) {
+    window.location.href = '/Account/Login';
+    return false;
+  }
   if (!res.ok) {
     SGE.Toast.show('No se pudieron cargar los datos del servidor', 'error');
     return false;
@@ -446,8 +514,10 @@ async function reloadAfterMutation() {
 }
 
 SGE.Api = {
+  loadShell,
   loadBootstrap,
   mapBootstrap,
+  mapShell,
   saveEmpresaApi,
   jsonFetch: SGE.Http.jsonFetch,
   mutations,

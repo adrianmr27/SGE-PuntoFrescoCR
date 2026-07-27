@@ -7,7 +7,7 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class PedidoApiController : BaseSpaApiController
 {
     private readonly IPedidoService _service;
-    public PedidoApiController(IPedidoService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public PedidoApiController(IPedidoService service, IPermisoService permisoService, AuditoriaService auditoria) : base(permisoService, auditoria) => _service = service;
 
     [HttpPost("pedidos")]
     public async Task<ActionResult<int>> PostPedido([FromBody] PedidoCreateDto dto, CancellationToken ct)

@@ -43,8 +43,8 @@ SGE.Router.register('roles', () => `
           ${SGE.DB.roles.map(r=>`
           <tr>
             <td style="color:var(--text-muted)">${r.id}</td>
-            <td class="td-name">${r.nombre}</td>
-            <td style="color:var(--text-secondary)">${r.descripcion}</td>
+            <td class="td-name">${SGE.Export.escapeHtml(r.nombre)}</td>
+            <td style="color:var(--text-secondary)">${SGE.Export.escapeHtml(r.descripcion)}</td>
             <td><span class="badge ${r.estado==='Activo'?'badge-active':'badge-inactive'}">${r.estado}</span></td>
             <td><span class="badge badge-navy"><i class="bi bi-person me-1" aria-hidden="true"></i>${r.usuarios}</span></td>
             <td>
@@ -147,10 +147,7 @@ SGE.Roles = {
     const activo = rol.estado !== 'Activo';
     try {
       await SGE.Api.mutations.putRol(id, { nombre: rol.nombre, descripcion: rol.descripcion || '', activo });
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(activo ? 'Rol activado' : 'Rol desactivado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('roles'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }
@@ -207,7 +204,6 @@ SGE.Roles = {
     try {
       await SGE.Api.mutations.putPermisosRol(rid, rows);
       SGE.Modal.close('modal-permisos');
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Permisos actualizados');
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
@@ -227,10 +223,7 @@ SGE.Roles = {
       }
       SGE.Modal.close('modal-rol');
       window._rolEditId = null;
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Rol guardado correctamente');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('roles'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

@@ -7,7 +7,7 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public class FinanzaApiController : BaseSpaApiController
 {
     private readonly IFinanzaService _service;
-    public FinanzaApiController(IFinanzaService service, IPermisoService permisoService) : base(permisoService) => _service = service;
+    public FinanzaApiController(IFinanzaService service, IPermisoService permisoService, AuditoriaService auditoria) : base(permisoService, auditoria) => _service = service;
 
     [HttpPut("cuentas-cobrar/{id:int}/estado")]
     public async Task<IActionResult> PutCuentaCobrarEstado(int id, [FromBody] CuentaEstadoDto dto, CancellationToken ct)

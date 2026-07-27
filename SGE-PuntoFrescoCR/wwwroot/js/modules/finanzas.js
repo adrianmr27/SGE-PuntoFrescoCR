@@ -45,7 +45,7 @@ ${(proxVencer.length || vencidos.length) ? `
   <div class="alert-banner-body">
     ${vencidos.length ? `<div class="alert-banner-title">${vencidos.length} pago(s)/cobro(s) vencidos sin regularizar</div>` : ''}
     ${proxVencer.length ? `<div class="alert-banner-title"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>${proxVencer.length} vencimiento(s) en los próximos 7 días</div>` : ''}
-    ${proxVencer.map(c => `<span style="margin-right:.75rem;"><strong>${c.cliente || c.proveedor}</strong> — ${SGE.fmt.currency(c.monto)} · vence ${SGE.fmt.date(c.vencimiento)}</span>`).join('')}
+    ${proxVencer.map(c => `<span style="margin-right:.75rem;"><strong>${SGE.Export.escapeHtml(c.cliente || c.proveedor)}</strong> — ${SGE.fmt.currency(c.monto)} · vence ${SGE.fmt.date(c.vencimiento)}</span>`).join('')}
   </div>
 </div>` : ''}
 
@@ -122,9 +122,9 @@ ${(proxVencer.length || vencidos.length) ? `
                 <td><code style="font-size:.75rem;background:var(--surface-alt);padding:1px 5px;border-radius:3px;">${m.id}</code></td>
                 <td style="font-size:.82rem;color:var(--text-muted);">${SGE.fmt.date(m.fecha)}</td>
                 <td><span class="badge ${m.tipo==='Ingreso'?'badge-active':'badge-danger'}">${m.tipo}</span></td>
-                <td><span class="badge badge-navy">${m.categoria}</span></td>
-                <td style="font-size:.83rem;">${m.descripcion}</td>
-                <td><code style="font-size:.75rem;color:var(--text-muted);">${m.ref}</code></td>
+                <td><span class="badge badge-navy">${SGE.Export.escapeHtml(m.categoria)}</span></td>
+                <td style="font-size:.83rem;">${SGE.Export.escapeHtml(m.descripcion)}</td>
+                <td><code style="font-size:.75rem;color:var(--text-muted);">${SGE.Export.escapeHtml(m.ref)}</code></td>
                 <td style="font-weight:700;color:${m.tipo==='Ingreso'?'var(--green-dark)':'#c0464b'};" data-sort="${m.monto}">
                   ${m.tipo==='Ingreso'?'+':'−'}${SGE.fmt.currency(m.monto)}
                 </td>
@@ -175,8 +175,8 @@ ${(proxVencer.length || vencidos.length) ? `
                 const eCls = {Pendiente:'badge-pending',Pagado:'badge-active',Vencido:'badge-danger'}[c.estado];
                 return `<tr>
                   <td><code style="font-size:.75rem;">${c.id}</code></td>
-                  <td class="td-name">${c.cliente}</td>
-                  <td style="font-size:.82rem;">${c.concepto}</td>
+                  <td class="td-name">${SGE.Export.escapeHtml(c.cliente)}</td>
+                  <td style="font-size:.82rem;">${SGE.Export.escapeHtml(c.concepto)}</td>
                   <td><span class="badge ${eCls}">${c.estado}</span></td>
                   <td style="font-size:.82rem;">${SGE.fmt.date(c.vencimiento)}${diasLabel}</td>
                   <td style="font-weight:700;color:var(--navy);" data-sort="${c.monto}">${SGE.fmt.currency(c.monto)}</td>
@@ -234,8 +234,8 @@ ${(proxVencer.length || vencidos.length) ? `
                 const eCls = {Pendiente:'badge-pending',Pagado:'badge-active',Vencido:'badge-danger'}[c.estado];
                 return `<tr>
                   <td><code style="font-size:.75rem;">${c.id}</code></td>
-                  <td class="td-name">${c.proveedor}</td>
-                  <td style="font-size:.82rem;">${c.concepto}</td>
+                  <td class="td-name">${SGE.Export.escapeHtml(c.proveedor)}</td>
+                  <td style="font-size:.82rem;">${SGE.Export.escapeHtml(c.concepto)}</td>
                   <td><span class="badge ${eCls}">${c.estado}</span></td>
                   <td style="font-size:.82rem;">${SGE.fmt.date(c.vencimiento)}${diasLabel}</td>
                   <td style="font-weight:700;color:#c0464b;" data-sort="${c.monto}">${SGE.fmt.currency(c.monto)}</td>
@@ -315,7 +315,7 @@ ${(proxVencer.length || vencidos.length) ? `
           <label class="form-label">Cliente <span>*</span></label>
           <select class="form-control" id="fin-cc-cliente">
             <option value="">Seleccione...</option>
-            ${clientes.map(c=>`<option>${c.nombre}</option>`).join('')}
+            ${clientes.map(c=>`<option>${SGE.Export.escapeHtml(c.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -352,7 +352,7 @@ ${(proxVencer.length || vencidos.length) ? `
           <label class="form-label">Proveedor / Servicio <span>*</span></label>
           <select class="form-control" id="fin-cp-proveedor">
             <option value="">Seleccione...</option>
-            ${proveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}
+            ${proveedores.map(p=>`<option value="${p.id}">${SGE.Export.escapeHtml(p.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -391,19 +391,26 @@ SGE.Fin = {
     const movs = SGE.DB.movFinancieros || [];
     const cobrar = SGE.DB.cuentasCobrar || [];
     const pagar = SGE.DB.cuentasPagar || [];
+    const ingresos = movs.filter(m => m.tipo === 'Ingreso').reduce((s, m) => s + m.monto, 0);
+    const egresos = movs.filter(m => m.tipo === 'Egreso').reduce((s, m) => s + m.monto, 0);
+    if (tipo === 'pdf') {
+      const movRows = movs.map(m => [m.id, m.fecha, m.tipo, m.categoria, m.descripcion, m.ref, SGE.fmt.currency(m.monto)]);
+      const tMov = SGE.Export.buildTable('Movimientos financieros', ['ID', 'Fecha', 'Tipo', 'Categoría', 'Descripción', 'Ref.', 'Monto'], movRows, [6]);
+      const cobRows = cobrar.map(c => [c.id, c.cliente, c.concepto, c.estado, c.vencimiento, SGE.fmt.currency(c.monto)]);
+      const tCob = SGE.Export.buildTable('Cuentas por cobrar', ['ID', 'Cliente', 'Concepto', 'Estado', 'Vencimiento', 'Monto'], cobRows, [5]);
+      const pagRows = pagar.map(c => [c.id, c.proveedor, c.concepto, c.estado, c.vencimiento, SGE.fmt.currency(c.monto)]);
+      const tPag = SGE.Export.buildTable('Cuentas por pagar', ['ID', 'Proveedor', 'Concepto', 'Estado', 'Vencimiento', 'Monto'], pagRows, [5]);
+      const inner = tMov + tCob + tPag + `<p class="lead">Resumen: ingresos ${SGE.fmt.currency(ingresos)} · egresos ${SGE.fmt.currency(egresos)} · balance ${SGE.fmt.currency(ingresos - egresos)}</p>`;
+      SGE.Export.openPrintDocument('Finanzas', SGE.Export.wrapLetterhead('Informe financiero', 'Movimientos, cuentas por cobrar y por pagar', inner));
+      return;
+    }
     const movRows = movs.map(m => [m.id, m.fecha, m.tipo, m.categoria, m.descripcion, m.ref, Number(m.monto || 0).toFixed(2)]);
     const tMov = SGE.Export.buildTable('Movimientos financieros', ['ID', 'Fecha', 'Tipo', 'Categoría', 'Descripción', 'Ref.', 'Monto CRC'], movRows, [6]);
     const cobRows = cobrar.map(c => [c.id, c.cliente, c.concepto, c.estado, c.vencimiento, Number(c.monto || 0).toFixed(2)]);
     const tCob = SGE.Export.buildTable('Cuentas por cobrar', ['ID', 'Cliente', 'Concepto', 'Estado', 'Vencimiento', 'Monto CRC'], cobRows, [5]);
     const pagRows = pagar.map(c => [c.id, c.proveedor, c.concepto, c.estado, c.vencimiento, Number(c.monto || 0).toFixed(2)]);
     const tPag = SGE.Export.buildTable('Cuentas por pagar', ['ID', 'Proveedor', 'Concepto', 'Estado', 'Vencimiento', 'Monto CRC'], pagRows, [5]);
-    const ingresos = movs.filter(m => m.tipo === 'Ingreso').reduce((s, m) => s + m.monto, 0);
-    const egresos = movs.filter(m => m.tipo === 'Egreso').reduce((s, m) => s + m.monto, 0);
-    const inner = tMov + tCob + tPag + `<p class="lead">Resumen: ingresos ${SGE.fmt.currency(ingresos)} · egresos ${SGE.fmt.currency(egresos)} · balance ${SGE.fmt.currency(ingresos - egresos)}</p>`;
-    if (tipo === 'pdf') {
-      SGE.Export.openPrintDocument('Finanzas', SGE.Export.wrapLetterhead('Informe financiero', 'Movimientos, cuentas por cobrar y por pagar', inner));
-      return;
-    }
+    const inner = tMov + tCob + tPag + `<p class="lead">Resumen: ingresos ${Number(ingresos).toFixed(2)} · egresos ${Number(egresos).toFixed(2)} · balance ${Number(ingresos - egresos).toFixed(2)}</p>`;
     SGE.Export.downloadExcelHtml(`finanzas_${new Date().toISOString().slice(0, 10)}.xls`, 'Finanzas — exportación', inner);
   },
   filterMovs: () => {
@@ -423,7 +430,6 @@ SGE.Fin = {
       } else {
         await SGE.Api.mutations.putCuentaPagarEstado(cuentaId, 'Pagado');
       }
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(tipo === 'cobrar' ? 'Cobro registrado' : 'Pago registrado');
       SGE.Router.navigate('finanzas');
     } catch (e) {
@@ -445,7 +451,6 @@ SGE.Fin = {
     }
     try {
       await SGE.Api.mutations.postMovFin(body);
-      await SGE.Api.reloadAfterMutation();
       SGE.Modal.close('modal-mov-manual');
       SGE.Toast.show('Movimiento registrado');
       SGE.Router.navigate('finanzas');
@@ -470,7 +475,6 @@ SGE.Fin = {
         monto,
         vencimiento: venc
       });
-      await SGE.Api.reloadAfterMutation();
       SGE.Modal.close('modal-cuenta-cobrar');
       SGE.Toast.show('Cuenta por cobrar registrada');
       SGE.Router.navigate('finanzas');
@@ -494,7 +498,6 @@ SGE.Fin = {
         monto,
         vencimiento: venc
       });
-      await SGE.Api.reloadAfterMutation();
       SGE.Modal.close('modal-cuenta-pagar');
       SGE.Toast.show('Cuenta por pagar registrada');
       SGE.Router.navigate('finanzas');

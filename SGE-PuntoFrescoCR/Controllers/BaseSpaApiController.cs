@@ -11,8 +11,13 @@ namespace SGE_PuntoFrescoCR.Controllers;
 public abstract class BaseSpaApiController : ControllerBase
 {
     private readonly IPermisoService _permisoService;
+    private readonly AuditoriaService _auditoria;
 
-    protected BaseSpaApiController(IPermisoService permisoService) => _permisoService = permisoService;
+    protected BaseSpaApiController(IPermisoService permisoService, AuditoriaService auditoria)
+    {
+        _permisoService = permisoService;
+        _auditoria = auditoria;
+    }
 
     protected int UsuarioOperador()
     {
@@ -22,4 +27,7 @@ public abstract class BaseSpaApiController : ControllerBase
 
     protected Task<bool> PuedeAsync(string modulo, PermisoAccion accion, CancellationToken ct)
         => _permisoService.TienePermisoAsync(UsuarioOperador(), modulo, accion, ct);
+
+    protected Task AuditarAsync(string accion, string? entidad = null, string? entidadId = null, string? detalle = null, CancellationToken ct = default)
+        => _auditoria.RegistrarAsync(UsuarioOperador(), User.FindFirstValue("usuario"), accion, entidad, entidadId, detalle, ct: ct);
 }

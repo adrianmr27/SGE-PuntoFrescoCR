@@ -65,3 +65,16 @@ public class Usuario
 
     public Rol Rol { get; set; } = null!;
 }
+
+public class Auditoria
+{
+    public long AuditoriaId { get; set; }
+    public int? UsuarioId { get; set; }
+    public string? NombreUsuario { get; set; }
+    public string Accion { get; set; } = null!;
+    public string? Entidad { get; set; }
+    public string? EntidadId { get; set; }
+    public string? Detalle { get; set; }
+    public string? DireccionIp { get; set; }
+    public DateTime FechaHora { get; set; }
+}

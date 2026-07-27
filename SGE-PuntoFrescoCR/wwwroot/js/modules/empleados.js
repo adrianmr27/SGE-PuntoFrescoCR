@@ -45,21 +45,23 @@ SGE.Router.register('empleados', () => `
           <th>#</th><th>Empleado</th><th>Identificación</th><th>Puesto</th><th>Área</th><th>Estado</th><th>Acciones</th>
         </tr></thead>
         <tbody>
-          ${SGE.DB.empleados.map(emp => `
+          ${SGE.DB.empleados.map(emp => {
+          const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
+          return `
           <tr>
             <td style="color:var(--text-muted)">${emp.id}</td>
             <td>
               <div style="display:flex;align-items:center;gap:.65rem;">
-                <div class="user-avatar" style="width:32px;height:32px;font-size:.75rem;">${emp.nombre.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
+                <div class="user-avatar" style="width:32px;height:32px;font-size:.75rem;">${esc(emp.nombre.split(' ').map(n => n[0]).join('').slice(0, 2))}</div>
                 <div>
-                  <div class="td-name">${emp.nombre}</div>
-                  <div class="td-sub">${emp.correo}</div>
+                  <div class="td-name">${esc(emp.nombre)}</div>
+                  <div class="td-sub">${esc(emp.correo)}</div>
                 </div>
               </div>
             </td>
-            <td style="font-size:.82rem;">${emp.identificacion}</td>
-            <td>${emp.puesto}</td>
-            <td><span class="badge badge-info">${emp.area}</span></td>
+            <td style="font-size:.82rem;">${esc(emp.identificacion)}</td>
+            <td>${esc(emp.puesto)}</td>
+            <td><span class="badge badge-info">${esc(emp.area)}</span></td>
             <td><span class="badge ${emp.estado === 'Activo' ? 'badge-active' : 'badge-inactive'}">${emp.estado}</span></td>
             <td>
               <div class="flex gap-1">
@@ -68,7 +70,7 @@ SGE.Router.register('empleados', () => `
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${emp.estado === 'Activo' ? 'Desactivar' : 'Activar'}" onclick="SGE.Emp.toggleActivo(${emp.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
               </div>
             </td>
-          </tr>`).join('')}
+          </tr>`;}).join('')}
         </tbody>
       </table>
     </div>
@@ -248,10 +250,7 @@ SGE.Emp = {
                 padecimientos: emp.padecimientos || null,
                 activo
             });
-            await SGE.Api.reloadAfterMutation();
             SGE.Toast.show(activo ? 'Empleado activado' : 'Empleado desactivado');
-            SGE.Router.navigate('dashboard');
-            setTimeout(() => SGE.Router.navigate('empleados'), 50);
         } catch (e) {
             SGE.Toast.show(e.message || 'Error', 'error');
         }
@@ -259,23 +258,24 @@ SGE.Emp = {
     view: (id) => {
         const emp = SGE.DB.empleados.find(e => e.id === id);
         if (!emp) return;
+        const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
         document.getElementById('emp-detail-body').innerHTML = `
       <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border);">
-        <div class="user-avatar" style="width:56px;height:56px;font-size:1.2rem;">${emp.nombre.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
+        <div class="user-avatar" style="width:56px;height:56px;font-size:1.2rem;">${esc(emp.nombre.split(' ').map(n => n[0]).join('').slice(0, 2))}</div>
         <div>
-          <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">${emp.nombre}</div>
-          <div style="color:var(--text-muted);font-size:.85rem;">${emp.puesto} · <span class="badge ${emp.estado === 'Activo' ? 'badge-active' : 'badge-inactive'}">${emp.estado}</span></div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">${esc(emp.nombre)}</div>
+          <div style="color:var(--text-muted);font-size:.85rem;">${esc(emp.puesto)} · <span class="badge ${emp.estado === 'Activo' ? 'badge-active' : 'badge-inactive'}">${emp.estado}</span></div>
         </div>
       </div>
       <div class="info-grid info-grid--3cols">
-        <div class="info-item"><div class="info-label">Identificación</div><div class="info-value">${emp.identificacion}</div></div>
-        <div class="info-item"><div class="info-label">Área</div><div class="info-value"><span class="badge badge-info">${emp.area}</span></div></div>
-        <div class="info-item"><div class="info-label">Teléfono</div><div class="info-value"><i class="bi bi-telephone me-1" aria-hidden="true"></i>${emp.telefono || '—'}</div></div>
-        <div class="info-item col-span-2"><div class="info-label">Correo</div><div class="info-value"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${emp.correo || '—'}</div></div>
-        <div class="info-item col-span-3"><div class="info-label">Dirección</div><div class="info-value"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${emp.direccion || '—'}</div></div>
-        <div class="info-item col-span-3"><div class="info-label">Contacto de emergencia</div><div class="info-value">${emp.contacto_emergencia_nombre || '—'} · <i class="bi bi-telephone me-1" aria-hidden="true"></i>${emp.contacto_emergencia_tel || '—'}</div></div>
-        <div class="info-item col-span-3"><div class="info-label">Alergias a medicamentos</div><div class="info-value">${emp.alergias || '—'}</div></div>
-        <div class="info-item col-span-3"><div class="info-label">Padecimientos / enfermedades</div><div class="info-value">${emp.padecimientos || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Identificación</div><div class="info-value">${esc(emp.identificacion)}</div></div>
+        <div class="info-item"><div class="info-label">Área</div><div class="info-value"><span class="badge badge-info">${esc(emp.area)}</span></div></div>
+        <div class="info-item"><div class="info-label">Teléfono</div><div class="info-value"><i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(emp.telefono) || '—'}</div></div>
+        <div class="info-item col-span-2"><div class="info-label">Correo</div><div class="info-value"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${esc(emp.correo) || '—'}</div></div>
+        <div class="info-item col-span-3"><div class="info-label">Dirección</div><div class="info-value"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${esc(emp.direccion) || '—'}</div></div>
+        <div class="info-item col-span-3"><div class="info-label">Contacto de emergencia</div><div class="info-value">${esc(emp.contacto_emergencia_nombre) || '—'} · <i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(emp.contacto_emergencia_tel) || '—'}</div></div>
+        <div class="info-item col-span-3"><div class="info-label">Alergias a medicamentos</div><div class="info-value">${esc(emp.alergias) || '—'}</div></div>
+        <div class="info-item col-span-3"><div class="info-label">Padecimientos / enfermedades</div><div class="info-value">${esc(emp.padecimientos) || '—'}</div></div>
         <div class="info-item"><div class="info-label">Estado</div><div class="info-value"><span class="badge ${emp.estado === 'Activo' ? 'badge-active' : 'badge-inactive'}">${emp.estado}</span></div></div>
       </div>
     `;
@@ -286,7 +286,7 @@ SGE.Emp = {
         window._empEditId = id;
         const emp = SGE.DB.empleados.find(e => e.id === id);
         if (!emp) return;
-        document.getElementById('emp-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Empleado — ${emp.nombre}`;
+        document.getElementById('emp-modal-title').innerHTML = `<i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar Empleado — ${typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml(emp.nombre) : emp.nombre}`;
         document.getElementById('emp-nombre').value = emp.nombre;
         document.getElementById('emp-id').value = emp.identificacion;
         document.getElementById('emp-puesto').value = emp.puesto;
@@ -349,10 +349,7 @@ SGE.Emp = {
             }
             SGE.Modal.close('modal-empleado');
             window._empEditId = null;
-            await SGE.Api.reloadAfterMutation();
             SGE.Toast.show('Empleado guardado');
-            SGE.Router.navigate('dashboard');
-            setTimeout(() => SGE.Router.navigate('empleados'), 50);
         } catch (e) {
             SGE.Toast.show(e.message || 'Error', 'error');
         }

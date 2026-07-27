@@ -3,6 +3,7 @@
 
 SGE.Router.register('administrativo', () => {
   const e = SGE.DB.empresa;
+  const esc = typeof SGE.Export?.escapeHtml === 'function' ? SGE.Export.escapeHtml : (s) => String(s ?? '');
   return `
 <div class="page-header">
   <div class="page-title">
@@ -29,38 +30,38 @@ SGE.Router.register('administrativo', () => {
         <div class="info-grid info-grid--3cols" style="margin-bottom:1.5rem;">
           <div class="info-item col-span-2">
             <div class="info-label">Nombre Comercial</div>
-            <div class="info-value" style="font-size:1.05rem; font-weight:700; color:var(--navy);">${e.nombre_comercial}</div>
+            <div class="info-value" style="font-size:1.05rem; font-weight:700; color:var(--navy);">${esc(e.nombre_comercial)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Cédula Jurídica</div>
-            <div class="info-value">${e.cedula_juridica}</div>
+            <div class="info-value">${esc(e.cedula_juridica)}</div>
           </div>
           <div class="info-item" style="grid-column:1/-1;">
             <div class="info-label">Razón Social</div>
-            <div class="info-value">${e.razon_social}</div>
+            <div class="info-value">${esc(e.razon_social)}</div>
           </div>
         </div>
         <div style="height:1px; background:var(--border); margin-bottom:1.25rem;"></div>
         <div class="info-grid info-grid--3cols">
           <div class="info-item">
             <div class="info-label">Teléfono Principal</div>
-            <div class="info-value"><i class="bi bi-telephone me-1" aria-hidden="true"></i>${e.telefono1}</div>
+            <div class="info-value"><i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(e.telefono1)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Teléfono Alternativo</div>
-            <div class="info-value"><i class="bi bi-telephone me-1" aria-hidden="true"></i>${e.telefono2}</div>
+            <div class="info-value"><i class="bi bi-telephone me-1" aria-hidden="true"></i>${esc(e.telefono2)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Sitio Web</div>
-            <div class="info-value"><i class="bi bi-globe2 me-1" aria-hidden="true"></i>${e.sitio_web}</div>
+            <div class="info-value"><i class="bi bi-globe2 me-1" aria-hidden="true"></i>${esc(e.sitio_web)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Correo Principal</div>
-            <div class="info-value"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${e.correo}</div>
+            <div class="info-value"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${esc(e.correo)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Correo Alternativo</div>
-            <div class="info-value"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${e.correo_alt}</div>
+            <div class="info-value"><i class="bi bi-envelope me-1" aria-hidden="true"></i>${esc(e.correo_alt)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">IVA por Defecto</div>
@@ -68,7 +69,7 @@ SGE.Router.register('administrativo', () => {
           </div>
           <div class="info-item" style="grid-column:1/-1;">
             <div class="info-label">Dirección</div>
-            <div class="info-value"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${e.direccion}</div>
+            <div class="info-value"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>${esc(e.direccion)}</div>
           </div>
         </div>
       </div>
@@ -85,36 +86,36 @@ SGE.Router.register('administrativo', () => {
           <div class="form-grid cols-3">
             <div class="form-group col-span-2">
               <label class="form-label">Nombre Comercial <span>*</span></label>
-              <input class="form-control" id="f-ncomer" value="${e.nombre_comercial}">
+              <input class="form-control" id="f-ncomer" value="${esc(e.nombre_comercial)}">
             </div>
             <div class="form-group">
               <label class="form-label">Cédula Jurídica <span>*</span></label>
-              <input class="form-control" id="f-cedula" value="${e.cedula_juridica}">
+              <input class="form-control" id="f-cedula" value="${esc(e.cedula_juridica)}">
             </div>
             <div class="form-group col-span-3">
               <label class="form-label">Razón Social <span>*</span></label>
-              <input class="form-control" id="f-razon" value="${e.razon_social}">
+              <input class="form-control" id="f-razon" value="${esc(e.razon_social)}">
             </div>
             <div class="form-divider-label">Contacto</div>
             <div class="form-group">
               <label class="form-label">Teléfono Principal</label>
-              <input class="form-control" id="f-tel1" value="${e.telefono1}">
+              <input class="form-control" id="f-tel1" value="${esc(e.telefono1)}">
             </div>
             <div class="form-group">
               <label class="form-label">Teléfono Alternativo</label>
-              <input class="form-control" id="f-tel2" value="${e.telefono2}">
+              <input class="form-control" id="f-tel2" value="${esc(e.telefono2)}">
             </div>
             <div class="form-group">
               <label class="form-label">Sitio Web</label>
-              <input class="form-control" id="f-web" value="${e.sitio_web}">
+              <input class="form-control" id="f-web" value="${esc(e.sitio_web)}">
             </div>
             <div class="form-group">
               <label class="form-label">Correo Principal</label>
-              <input class="form-control" type="email" id="f-email1" value="${e.correo}">
+              <input class="form-control" type="email" id="f-email1" value="${esc(e.correo)}">
             </div>
             <div class="form-group">
               <label class="form-label">Correo Alternativo</label>
-              <input class="form-control" type="email" id="f-email2" value="${e.correo_alt}">
+              <input class="form-control" type="email" id="f-email2" value="${esc(e.correo_alt)}">
             </div>
             <div class="form-group">
               <label class="form-label">IVA por Defecto</label>
@@ -126,7 +127,7 @@ SGE.Router.register('administrativo', () => {
             </div>
             <div class="form-group col-span-3">
               <label class="form-label">Dirección</label>
-              <textarea class="form-control" id="f-dir">${e.direccion}</textarea>
+              <textarea class="form-control" id="f-dir">${esc(e.direccion)}</textarea>
             </div>
           </div>
         </div>
@@ -177,9 +178,9 @@ SGE.Router.register('administrativo', () => {
               ${SGE.DB.parametros.map(p=>`
               <tr>
                 <td style="color:var(--text-muted)">${p.id}</td>
-                <td><span class="badge badge-navy">${p.tipo}</span></td>
-                <td class="td-name">${p.nombre}</td>
-                <td><strong>${p.valor}</strong></td>
+                <td><span class="badge badge-navy">${esc(p.tipo)}</span></td>
+                <td class="td-name">${esc(p.nombre)}</td>
+                <td><strong>${esc(p.valor)}</strong></td>
                 <td><span class="badge ${p.estado==='Activo'?'badge-active':'badge-inactive'}">${p.estado}</span></td>
                 <td>
                   <div class="flex gap-1">
@@ -269,14 +270,16 @@ SGE.Router.register('administrativo', () => {
       <div class="card">
         <div class="card-header"><span class="card-title"><i class="bi bi-person me-1" aria-hidden="true"></i>Usuarios por Rol</span></div>
         <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
           <table><thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead><tbody>
             ${SGE.DB.usuarios.map(u=>`
             <tr>
-              <td><div class="td-name">${u.nombre}</div><div class="td-sub">${u.usuario}</div></td>
-              <td>${u.rol}</td>
+              <td><div class="td-name">${esc(u.nombre)}</div><div class="td-sub">${esc(u.usuario)}</div></td>
+              <td>${esc(u.rol)}</td>
               <td><span class="badge ${u.estado==='Activo'?'badge-active':'badge-inactive'}">${u.estado}</span></td>
             </tr>`).join('')}
           </tbody></table>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -287,7 +290,7 @@ SGE.Router.register('administrativo', () => {
             const pct = Math.round((count/SGE.DB.empleados.length)*100);
             return `<div style="margin-bottom:.9rem;">
               <div style="display:flex; justify-content:space-between; margin-bottom:.3rem; font-size:.82rem;">
-                <span style="font-weight:600">${area}</span>
+                <span style="font-weight:600">${esc(area)}</span>
                 <span style="color:var(--text-muted)">${count} personas</span>
               </div>
               <div style="height:8px; background:var(--border); border-radius:99px; overflow:hidden;">
@@ -302,14 +305,16 @@ SGE.Router.register('administrativo', () => {
     <div class="card" style="margin-top:1.25rem;">
       <div class="card-header"><span class="card-title"><i class="bi bi-key me-1" aria-hidden="true"></i>Roles del sistema</span></div>
       <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
         <table><thead><tr><th>Rol</th><th>Descripción</th><th>Usuarios</th><th>Estado</th></tr></thead><tbody>
           ${SGE.DB.roles.map(r=>`<tr>
-            <td class="td-name">${r.nombre}</td>
-            <td style="color:var(--text-muted);font-size:.85rem;">${r.descripcion || '—'}</td>
+            <td class="td-name">${esc(r.nombre)}</td>
+            <td style="color:var(--text-muted);font-size:.85rem;">${esc(r.descripcion) || '—'}</td>
             <td>${r.usuarios}</td>
             <td><span class="badge ${r.estado==='Activo'?'badge-active':'badge-inactive'}">${r.estado}</span></td>
           </tr>`).join('')}
         </tbody></table>
+        </div>
       </div>
     </div>
   </div>
@@ -323,8 +328,6 @@ SGE.Adm = {
     const ok = await SGE.Api.saveEmpresaApi();
     if (!ok) return;
     SGE.Modal.close('modal-empresa');
-    SGE.Router.navigate('dashboard');
-    setTimeout(() => SGE.Router.navigate('administrativo'), 50);
   },
   newParam: () => {
     window._paramEditId = null;
@@ -361,10 +364,7 @@ SGE.Adm = {
     const activo = p.estado !== 'Activo';
     try {
       await SGE.Api.mutations.putParametro(id, { valor: raw, activo });
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show(activo ? 'Parámetro activado' : 'Parámetro desactivado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('administrativo'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }
@@ -391,10 +391,7 @@ SGE.Adm = {
       }
       SGE.Modal.close('modal-param');
       window._paramEditId = null;
-      await SGE.Api.reloadAfterMutation();
       SGE.Toast.show('Parámetro guardado');
-      SGE.Router.navigate('dashboard');
-      setTimeout(() => SGE.Router.navigate('administrativo'), 50);
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

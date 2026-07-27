@@ -54,6 +54,7 @@ public class SpaCrudService
     public async Task<int?> CreateRolAsync(RolCreateDto dto, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(dto.Nombre)) return null;
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var r = new Rol
         {
             Nombre = dto.Nombre.Trim(),
@@ -80,6 +81,7 @@ public class SpaCrudService
             });
         }
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return r.RolId;
     }
 
@@ -187,33 +189,39 @@ public class SpaCrudService
 
         var tempPassword = AuthService.GenerarPasswordTemporal();
         var hash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
-        var u = new Usuario
+        Usuario u;
+        await using (var tx = await _db.Database.BeginTransactionAsync(ct))
         {
-            RolId = dto.RolId,
-            NombreCompleto = dto.NombreCompleto.Trim(),
-            Identificacion = ident,
-            NombreUsuario = nu,
-            Correo = mail,
-            PasswordHash = hash,
-            PasswordSalt = hash,
-            Puesto = dto.Puesto,
-            Telefono = dto.Telefono,
-            Direccion = dto.Direccion,
-            Activo = dto.Activo,
-            RequiereCambioPassword = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        _db.Usuarios.Add(u);
-        await _db.SaveChangesAsync(ct);
-
-        if (dto.AreaId is > 0)
-        {
-            await UpsertEmpleadoVinculadoAsync(u, dto.AreaId.Value, dto.ContactoEmergenciaNombre,
-                dto.ContactoEmergenciaTel, dto.AlergiasMedicamentos, ct);
+            u = new Usuario
+            {
+                RolId = dto.RolId,
+                NombreCompleto = dto.NombreCompleto.Trim(),
+                Identificacion = ident,
+                NombreUsuario = nu,
+                Correo = mail,
+                PasswordHash = hash,
+                PasswordSalt = hash,
+                Puesto = dto.Puesto,
+                Telefono = dto.Telefono,
+                Direccion = dto.Direccion,
+                Activo = dto.Activo,
+                RequiereCambioPassword = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.Usuarios.Add(u);
             await _db.SaveChangesAsync(ct);
+
+            if (dto.AreaId is > 0)
+            {
+                await UpsertEmpleadoVinculadoAsync(u, dto.AreaId.Value, dto.ContactoEmergenciaNombre,
+                    dto.ContactoEmergenciaTel, dto.AlergiasMedicamentos, ct);
+                await _db.SaveChangesAsync(ct);
+            }
+            await tx.CommitAsync(ct);
         }
 
+        // Fuera de la transacción: un fallo de envío de correo no debe revertir al usuario ya creado.
         await EnviarPasswordTemporalAsync(u, tempPassword, ct);
 
         return u.UsuarioId;
@@ -462,6 +470,7 @@ Este es un mensaje automático, por favor no responder a este correo.
                 x => x.UsuarioId != id && (x.NombreUsuario == nu || x.Identificacion == ident || x.Correo == mail), ct))
             return false;
 
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         u.RolId = dto.RolId;
         u.NombreCompleto = dto.NombreCompleto.Trim();
         u.Identificacion = ident;
@@ -480,6 +489,7 @@ Este es un mensaje automático, por favor no responder a este correo.
                 dto.ContactoEmergenciaTel, dto.AlergiasMedicamentos, ct);
             await _db.SaveChangesAsync(ct);
         }
+        await tx.CommitAsync(ct);
 
         return true;
     }
@@ -546,10 +556,16 @@ Este es un mensaje automático, por favor no responder a este correo.
 
     public async Task<int?> CreateClienteAsync(ClienteCreateDto dto, CancellationToken ct = default)
     {
+        var ident = dto.Identificacion.Trim();
+        if (await _db.Clientes.AnyAsync(x => x.Identificacion == ident, ct))
+            throw new InvalidOperationException("Ya existe un cliente con esa identificación.");
+        if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Clientes.AnyAsync(x => x.Correo == dto.Correo, ct))
+            throw new InvalidOperationException("Ya existe un cliente con ese correo.");
+
         var c = new Cliente
         {
             Nombre = dto.Nombre.Trim(),
-            Identificacion = dto.Identificacion.Trim(),
+            Identificacion = ident,
             Telefono = dto.Telefono,
             Correo = dto.Correo,
             Direccion = dto.Direccion,
@@ -566,8 +582,14 @@ Este es un mensaje automático, por favor no responder a este correo.
     {
         var c = await _db.Clientes.FirstOrDefaultAsync(x => x.ClienteId == id, ct);
         if (c == null) return false;
+        var ident = dto.Identificacion.Trim();
+        if (await _db.Clientes.AnyAsync(x => x.Identificacion == ident && x.ClienteId != id, ct))
+            throw new InvalidOperationException("Ya existe otro cliente con esa identificación.");
+        if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Clientes.AnyAsync(x => x.Correo == dto.Correo && x.ClienteId != id, ct))
+            throw new InvalidOperationException("Ya existe otro cliente con ese correo.");
+
         c.Nombre = dto.Nombre.Trim();
-        c.Identificacion = dto.Identificacion.Trim();
+        c.Identificacion = ident;
         c.Telefono = dto.Telefono;
         c.Correo = dto.Correo;
         c.Direccion = dto.Direccion;
@@ -582,6 +604,8 @@ Este es un mensaje automático, por favor no responder a este correo.
         var ident = dto.Identificacion.Trim();
         if (await _db.Proveedores.AnyAsync(x => x.Identificacion == ident, ct))
             throw new InvalidOperationException("Ya existe un proveedor con esa identificación.");
+        if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Proveedores.AnyAsync(x => x.Correo == dto.Correo, ct))
+            throw new InvalidOperationException("Ya existe un proveedor con ese correo.");
 
         var p = new Proveedor
         {
@@ -606,6 +630,8 @@ Este es un mensaje automático, por favor no responder a este correo.
         var ident = dto.Identificacion.Trim();
         if (await _db.Proveedores.AnyAsync(x => x.Identificacion == ident && x.ProveedorId != id, ct))
             throw new InvalidOperationException("Ya existe otro proveedor con esa identificación.");
+        if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Proveedores.AnyAsync(x => x.Correo == dto.Correo && x.ProveedorId != id, ct))
+            throw new InvalidOperationException("Ya existe otro proveedor con ese correo.");
 
         p.Nombre = dto.Nombre.Trim();
         p.Identificacion = dto.Identificacion.Trim();
@@ -620,11 +646,15 @@ Este es un mensaje automático, por favor no responder a este correo.
 
     public async Task<int?> CreateProductoAsync(ProductoCreateDto dto, CancellationToken ct = default)
     {
+        var nombre = dto.Nombre.Trim();
+        if (await _db.Productos.AnyAsync(x => x.CategoriaId == dto.CategoriaId && x.Nombre == nombre, ct))
+            throw new InvalidOperationException("Ya existe un producto con ese nombre en esta categoría.");
+
         var p = new Producto
         {
             CategoriaId = dto.CategoriaId,
             ParametroIvaId = dto.ParametroIvaId,
-            Nombre = dto.Nombre.Trim(),
+            Nombre = nombre,
             Descripcion = dto.Descripcion,
             PrecioCompra = dto.PrecioCompra,
             PrecioVenta = dto.PrecioVenta,
@@ -660,9 +690,12 @@ Este es un mensaje automático, por favor no responder a este correo.
     {
         var p = await _db.Productos.FirstOrDefaultAsync(x => x.ProductoId == id, ct);
         if (p == null) return false;
+        var nombre = dto.Nombre.Trim();
+        if (await _db.Productos.AnyAsync(x => x.CategoriaId == dto.CategoriaId && x.Nombre == nombre && x.ProductoId != id, ct))
+            throw new InvalidOperationException("Ya existe otro producto con ese nombre en esta categoría.");
         p.CategoriaId = dto.CategoriaId;
         p.ParametroIvaId = dto.ParametroIvaId;
-        p.Nombre = dto.Nombre.Trim();
+        p.Nombre = nombre;
         p.Descripcion = dto.Descripcion;
         p.PrecioCompra = dto.PrecioCompra;
         p.PrecioVenta = dto.PrecioVenta;
@@ -698,6 +731,7 @@ Este es un mensaje automático, por favor no responder a este correo.
     public async Task<int?> CreateOrdenCompraAsync(OrdenCompraCreateDto dto, int usuarioId, CancellationToken ct = default)
     {
         if (dto.Lineas.Count == 0) return null;
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var uid = OpUser(usuarioId);
         var anio = DateTime.UtcNow.Year;
         var count = await _db.OrdenesCompra.CountAsync(ct) + 1;
@@ -739,6 +773,7 @@ Este es un mensaje automático, por favor no responder a este correo.
         oc.MontoIVA = Math.Round(iva, 2);
         oc.Total = Math.Round(tot, 2);
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return oc.OrdenCompraId;
     }
 
@@ -838,6 +873,9 @@ Este es un mensaje automático, por favor no responder a este correo.
     public async Task<int?> CreatePedidoAsync(PedidoCreateDto dto, int usuarioId, CancellationToken ct = default)
     {
         if (dto.Lineas.Count == 0) return null;
+        // RQNF-011: cabecera + líneas se confirman como una sola unidad; si algo falla
+        // a mitad de camino, se revierte todo (no queda un pedido sin líneas).
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var uid = OpUser(usuarioId);
         var anio = DateTime.UtcNow.Year;
         var count = await _db.Pedidos.CountAsync(ct) + 1;
@@ -880,6 +918,7 @@ Este es un mensaje automático, por favor no responder a este correo.
         ped.MontoIVA = Math.Round(iva, 2);
         ped.Total = Math.Round(tot, 2);
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return ped.PedidoId;
     }
 
@@ -979,6 +1018,7 @@ Este es un mensaje automático, por favor no responder a este correo.
 
     public async Task<int?> CreateLicitacionAsync(LicitacionCreateDto dto, int usuarioId, CancellationToken ct = default)
     {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var uid = OpUser(usuarioId);
         var anio = DateTime.UtcNow.Year;
         var count = await _db.Licitaciones.CountAsync(ct) + 1;
@@ -1027,6 +1067,7 @@ Este es un mensaje automático, por favor no responder a este correo.
         lic.MontoIVA = Math.Round(iva, 2);
         lic.TotalOferta = Math.Round(tot, 2);
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return lic.LicitacionId;
     }
 
