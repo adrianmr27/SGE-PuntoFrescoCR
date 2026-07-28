@@ -29,6 +29,7 @@ SGE.Router.register('proveedores', () => `
     <option value="0:desc:number">ID descendente</option>
     <option value="2:asc:text">Identificación ascendente</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">
@@ -55,7 +56,9 @@ SGE.Router.register('proveedores', () => `
             <td>
               <div class="flex gap-1">
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Prov.edit(${p.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${p.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Prov.toggleActivo(${p.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${p.estado==='Activo' ? 'Desactivar proveedor' : 'Activar proveedor'}" onclick="SGE.Prov.toggleActivo(${p.id})" aria-pressed="${p.estado==='Activo'}">
+                  <i class="bi ${p.estado==='Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i>
+                </button>
               </div>
             </td>
           </tr>`;}).join('')}
@@ -137,6 +140,8 @@ SGE.Prov = {
   toggleActivo: async (id) => {
     const p = SGE.DB.proveedores.find(x => x.id === id);
     if (!p) return;
+    const ok = await SGE.Confirm({ title: p.estado === 'Activo' ? 'Desactivar proveedor' : 'Activar proveedor', text: `¿Confirma ${p.estado === 'Activo' ? 'desactivar' : 'activar'} al proveedor ${p.nombre}?` });
+    if (!ok) return;
     try {
       await SGE.Api.mutations.putProveedor(id, {
         nombre: p.nombre,

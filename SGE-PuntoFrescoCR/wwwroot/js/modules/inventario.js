@@ -99,6 +99,7 @@ ${alertas.length ? `
     <option value="4:desc:number">Precio venta mayor</option>
     <option value="0:asc:number">ID ascendente</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">
@@ -128,7 +129,9 @@ ${alertas.length ? `
               <td>
                 <div class="flex gap-1">
                   <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Inv.edit(${p.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-                  <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${p.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Inv.toggleActivo(${p.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
+                  <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${p.estado==='Activo' ? 'Desactivar producto' : 'Activar producto'}" onclick="SGE.Inv.toggleActivo(${p.id})" aria-pressed="${p.estado==='Activo'}">
+                    <i class="bi ${p.estado==='Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i>
+                  </button>
                 </div>
               </td>
             </tr>`;
@@ -399,6 +402,8 @@ SGE.Inv = {
       stockMinimo: p.stock_min,
       activo: p.estado !== 'Activo'
     };
+    const ok = await SGE.Confirm({ title: p.estado === 'Activo' ? 'Desactivar producto' : 'Activar producto', text: `¿Confirma ${p.estado === 'Activo' ? 'desactivar' : 'activar'} el producto ${p.nombre}?` });
+    if (!ok) return;
     try {
       await SGE.Api.mutations.putProducto(id, body);
       SGE.Toast.show('Estado actualizado');

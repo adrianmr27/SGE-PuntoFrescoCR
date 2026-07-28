@@ -30,6 +30,7 @@ SGE.Router.register('roles', () => `
     <option value="4:desc:number">Más usuarios</option>
     <option value="4:asc:number">Menos usuarios</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">
@@ -49,7 +50,12 @@ SGE.Router.register('roles', () => `
             <td><span class="badge badge-navy"><i class="bi bi-person me-1" aria-hidden="true"></i>${r.usuarios}</span></td>
             <td>
               <div class="flex gap-1">
-                ${SGE.hasPerm('ROLES', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Roles.edit(${r.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button><button type="button" class="btn btn-ghost btn-sm btn-icon" title="Permisos" onclick="SGE.Roles.perms(${r.id})"><i class="bi bi-key" aria-hidden="true"></i></button><button type="button" class="btn btn-ghost btn-sm btn-icon" title="Activar / Desactivar" onclick="SGE.Roles.toggleActivo(${r.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>` : ''}
+                ${SGE.hasPerm('ROLES', 'editar') ? `
+                  <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Roles.edit(${r.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+                  <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Permisos" onclick="SGE.Roles.perms(${r.id})"><i class="bi bi-key" aria-hidden="true"></i></button>
+                  <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${r.estado==='Activo' ? 'Desactivar rol' : 'Activar rol'}" onclick="SGE.Roles.toggleActivo(${r.id})" aria-pressed="${r.estado==='Activo'}">
+                    <i class="bi ${r.estado==='Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i>
+                  </button>` : ''}
               </div>
             </td>
           </tr>`).join('')}
@@ -144,10 +150,14 @@ SGE.Roles = {
     if (!SGE.hasPerm('ROLES', 'editar')) { SGE.Toast.show('No tiene permiso para editar roles', 'error'); return; }
     const rol = SGE.DB.roles.find(r => r.id === id);
     if (!rol) return;
+    const ok = await SGE.Confirm({ title: rol.estado === 'Activo' ? 'Desactivar rol' : 'Activar rol', text: `¿Confirma ${rol.estado === 'Activo' ? 'desactivar' : 'activar'} el rol ${rol.nombre}?` });
+    if (!ok) return;
     const activo = rol.estado !== 'Activo';
     try {
       await SGE.Api.mutations.putRol(id, { nombre: rol.nombre, descripcion: rol.descripcion || '', activo });
       SGE.Toast.show(activo ? 'Rol activado' : 'Rol desactivado');
+      // Optionally refresh view to reflect new state
+      SGE.Router.refresh();
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

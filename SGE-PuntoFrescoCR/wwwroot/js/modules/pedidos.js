@@ -76,6 +76,7 @@ SGE.Router.register('pedidos', () => `
     <option value="total:desc">Total mayor a menor</option>
     <option value="total:asc">Total menor a mayor</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">

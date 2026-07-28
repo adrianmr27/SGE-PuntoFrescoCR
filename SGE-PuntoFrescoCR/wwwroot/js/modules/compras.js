@@ -43,7 +43,7 @@ ${alertas.length ? `
     <option value="5:asc:number">Total menor a mayor</option>
     <option value="0:desc:number">Nº orden descendente</option>
   </select>
-  <button type="button" class="btn btn-outline btn-sm" onclick="SGE.Com.clearFilters()"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Limpiar</button>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">

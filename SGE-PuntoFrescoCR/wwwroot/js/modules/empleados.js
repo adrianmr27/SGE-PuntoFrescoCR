@@ -35,6 +35,7 @@ SGE.Router.register('empleados', () => `
     <option value="4:asc:text">Área A → Z</option>
     <option value="3:asc:text">Puesto A → Z</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">
@@ -67,7 +68,9 @@ SGE.Router.register('empleados', () => `
               <div class="flex gap-1">
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Ver detalle" onclick="SGE.Emp.view(${emp.id})"><i class="bi bi-eye" aria-hidden="true"></i></button>
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Emp.edit(${emp.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${emp.estado === 'Activo' ? 'Desactivar' : 'Activar'}" onclick="SGE.Emp.toggleActivo(${emp.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${emp.estado === 'Activo' ? 'Desactivar empleado' : 'Activar empleado'}" onclick="SGE.Emp.toggleActivo(${emp.id})" aria-pressed="${emp.estado === 'Activo'}">
+                  <i class="bi ${emp.estado === 'Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i>
+                </button>
               </div>
             </td>
           </tr>`;}).join('')}
@@ -235,6 +238,8 @@ SGE.Emp = {
         const emp = SGE.DB.empleados.find(e => e.id === id);
         if (!emp) return;
         const activo = emp.estado !== 'Activo';
+        const ok = await SGE.Confirm({ title: emp.estado === 'Activo' ? 'Desactivar empleado' : 'Activar empleado', text: `¿Confirma ${emp.estado === 'Activo' ? 'desactivar' : 'activar'} al empleado ${emp.nombre}?` });
+        if (!ok) return;
         try {
             await SGE.Api.mutations.putEmpleado(id, {
                 areaId: emp.area_id,

@@ -50,7 +50,7 @@ ${(proxVencer.length || vencidos.length) ? `
 </div>` : ''}
 
 <!-- Balance Cards -->
-<div class="stat-grid" style="grid-template-columns: repeat(3,1fr); margin-bottom:1.5rem;">
+<div class="stat-grid" style="margin-bottom:1.5rem;">
   <div class="stat-card" style="border-left: 4px solid var(--green);">
     <div class="stat-icon green stat-icon-bi"><i class="bi bi-cash-stack" aria-hidden="true"></i></div>
     <div class="stat-info">
@@ -108,6 +108,7 @@ ${(proxVencer.length || vencidos.length) ? `
         <option value="6:desc:number">Monto mayor a menor</option>
         <option value="6:asc:number">Monto menor a mayor</option>
       </select>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
     </div>
     <div class="card">
       <div class="card-body" style="padding:0;">
@@ -160,6 +161,7 @@ ${(proxVencer.length || vencidos.length) ? `
         <option value="5:desc:number">Monto mayor a menor</option>
         <option value="5:asc:number">Monto menor a mayor</option>
       </select>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
     </div>
     <div class="card">
       <div class="card-body" style="padding:0;">
@@ -219,6 +221,7 @@ ${(proxVencer.length || vencidos.length) ? `
         <option value="5:desc:number">Monto mayor a menor</option>
         <option value="5:asc:number">Monto menor a mayor</option>
       </select>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
     </div>
     <div class="card">
       <div class="card-body" style="padding:0;">

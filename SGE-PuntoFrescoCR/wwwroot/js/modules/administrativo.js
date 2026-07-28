@@ -185,7 +185,9 @@ SGE.Router.register('administrativo', () => {
                 <td>
                   <div class="flex gap-1">
                     <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Adm.editParam(${p.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-                    <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Activar/Desactivar" onclick="SGE.Adm.toggleParam(${p.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
+                    <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${p.estado==='Activo' ? 'Desactivar parámetro' : 'Activar parámetro'}" onclick="SGE.Adm.toggleParam(${p.id})" aria-pressed="${p.estado==='Activo'}">
+                      <i class="bi ${p.estado==='Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i>
+                    </button>
                   </div>
                 </td>
               </tr>`).join('')}
@@ -360,11 +362,15 @@ SGE.Adm = {
   toggleParam: async (id) => {
     const p = SGE.DB.parametros.find(x => x.id === id);
     if (!p) return;
+    const ok = await SGE.Confirm({ title: p.estado === 'Activo' ? 'Desactivar parámetro' : 'Activar parámetro', text: `¿Confirma que desea ${p.estado === 'Activo' ? 'desactivar' : 'activar'} el parámetro "${p.nombre}"?` });
+    if (!ok) return;
     const raw = (p.valor || '').replace(/%$/, '');
     const activo = p.estado !== 'Activo';
     try {
       await SGE.Api.mutations.putParametro(id, { valor: raw, activo });
       SGE.Toast.show(activo ? 'Parámetro activado' : 'Parámetro desactivado');
+      // refresh administrativo view to reflect change
+      SGE.Router.refresh();
     } catch (e) {
       SGE.Toast.show(e.message || 'Error', 'error');
     }

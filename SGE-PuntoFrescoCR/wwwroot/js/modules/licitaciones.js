@@ -74,6 +74,7 @@ ${proxFechas.length ? `
     <option value="5:desc:number">Monto oferta mayor a menor</option>
     <option value="5:asc:number">Monto oferta menor a mayor</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">

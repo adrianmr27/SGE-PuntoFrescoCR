@@ -196,7 +196,6 @@ const Modal = (() => {
       if (e.target.dataset.closeModal || e.target.closest('[data-close-modal]')) close();
     });
   };
-
   return { open, close, init };
 })();
 
@@ -429,6 +428,13 @@ const initView = (id) => {
   initSearch();
   initTableSort();
   hideUnauthorizedActions();
+  // Save original table markup for this view so reset can restore it
+  try {
+    document.querySelectorAll('#main-content table').forEach(tbl => {
+      const tb = tbl.querySelector('tbody');
+      if (tb && !tbl.dataset.sgeOrig) tbl.dataset.sgeOrig = tb.innerHTML;
+    });
+  } catch (e) { /* ignore */ }
   // Dispatch custom event for per-view JS
   document.dispatchEvent(new CustomEvent('view:ready', { detail: { view: id } }));
 };
@@ -534,4 +540,75 @@ SGE.hasPerm = function (moduloCodigo, accion) {
   if (accion === 'eliminar') return !!p.puedeElim;
   if (accion === 'exportar') return !!p.puedeExport;
   return false;
+};
+
+// Confirmation helper (uses SweetAlert2 if available for consistent UI)
+SGE.Confirm = async (opts) => {
+  try {
+    const title = typeof opts === 'string' ? opts : (opts.title || 'Confirmar acción');
+    const text = typeof opts === 'string' ? '' : (opts.text || '¿Desea continuar?');
+    const confirmText = opts.confirmText || 'Sí';
+    const cancelText = opts.cancelText || 'No';
+    if (typeof Swal !== 'undefined') {
+      const res = await Swal.fire({
+        icon: 'warning',
+        title,
+        text,
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: cancelText
+      });
+      return !!res.isConfirmed;
+    }
+    return !!window.confirm(title + (text ? '\n\n' + text : ''));
+  } catch (e) {
+    return false;
+  }
+};
+
+// Reset filters helper: clears inputs/selects inside the closest .filter-bar
+SGE.resetFilters = (btnOrEl) => {
+  const el = btnOrEl instanceof Element ? btnOrEl.closest('.filter-bar') : document.querySelector('.filter-bar');
+  if (!el) return;
+  // Reset all text/search inputs and date inputs
+  el.querySelectorAll('input').forEach(input => {
+    const type = (input.getAttribute('type') || '').toLowerCase();
+    if (type === 'checkbox' || type === 'radio') {
+      input.checked = false;
+    } else {
+      input.value = '';
+    }
+    const ev = new Event((type === 'checkbox' || type === 'radio') ? 'change' : 'input', { bubbles: true });
+    input.dispatchEvent(ev);
+  });
+
+  // Reset all selects (including sort controls)
+  el.querySelectorAll('select').forEach(sel => {
+    sel.selectedIndex = 0;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  // If this filter-bar is tied to a table(s), clear any header sort indicators
+  const tableIds = new Set(Array.from(el.querySelectorAll('[data-table]')).map(n => n.dataset.table).filter(Boolean));
+  tableIds.forEach(id => {
+    const table = document.getElementById(id);
+    if (!table) return;
+    table.querySelectorAll('thead th[data-sort-col]').forEach(h => {
+      h.dataset.sortDir = '';
+      h.classList.remove('sort-asc', 'sort-desc');
+    });
+    // Restore original table body if saved by initView
+    try {
+      if (table.dataset.sgeOrig) {
+        const tbody = table.querySelector('tbody');
+        if (tbody) tbody.innerHTML = table.dataset.sgeOrig;
+      }
+    } catch (e) { /* ignore */ }
+  });
+
+  // Re-run view initers to bind events to restored markup
+  try { initView(SGE.Router.current()); } catch (e) { /* ignore */ }
+
+  // Reset custom switch controls inside filter-bar
+  el.querySelectorAll('.switch').forEach(sw => sw.classList.remove('on'));
 };

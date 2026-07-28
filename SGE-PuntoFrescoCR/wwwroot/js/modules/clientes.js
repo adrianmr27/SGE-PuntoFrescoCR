@@ -29,6 +29,7 @@ SGE.Router.register('clientes', () => `
     <option value="0:desc:number">ID descendente</option>
     <option value="2:asc:text">Identificación ascendente</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">
@@ -55,7 +56,9 @@ SGE.Router.register('clientes', () => `
             <td>
               <div class="flex gap-1">
                 <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Cli.edit(${c.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${c.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Cli.toggleActivo(${c.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-ghost btn-sm btn-icon" title="${c.estado==='Activo' ? 'Desactivar cliente' : 'Activar cliente'}" onclick="SGE.Cli.toggleActivo(${c.id})" aria-pressed="${c.estado==='Activo'}">
+                  <i class="bi ${c.estado==='Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i>
+                </button>
               </div>
             </td>
           </tr>`;}).join('')}
@@ -137,6 +140,8 @@ SGE.Cli = {
   toggleActivo: async (id) => {
     const c = SGE.DB.clientes.find(x => x.id === id);
     if (!c) return;
+    const ok = await SGE.Confirm({ title: c.estado === 'Activo' ? 'Desactivar cliente' : 'Activar cliente', text: `¿Confirma ${c.estado === 'Activo' ? 'desactivar' : 'activar'} al cliente ${c.nombre}?` });
+    if (!ok) return;
     try {
       await SGE.Api.mutations.putCliente(id, {
         nombre: c.nombre,

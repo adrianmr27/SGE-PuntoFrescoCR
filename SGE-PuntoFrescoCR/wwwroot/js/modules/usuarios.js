@@ -35,6 +35,7 @@ SGE.Router.register('usuarios', () => `
     <option value="5:desc:date">Último acceso más reciente</option>
     <option value="5:asc:date">Último acceso más antiguo</option>
   </select>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="SGE.resetFilters(this)"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Restablecer filtros</button>
 </div>
 
 <div class="card">
@@ -66,7 +67,7 @@ SGE.Router.register('usuarios', () => `
             <td>
               <div class="flex gap-1">
                 ${SGE.hasPerm('USUARIOS', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="SGE.Usu.edit(${u.id})"><i class="bi bi-pencil" aria-hidden="true"></i></button>` : ''}
-                ${SGE.hasPerm('USUARIOS', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="${u.estado==='Activo'?'Desactivar':'Activar'}" onclick="SGE.Usu.toggleActivo(${u.id})"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>` : ''}
+                ${SGE.hasPerm('USUARIOS', 'editar') ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" title="${u.estado==='Activo'?'Desactivar usuario':'Activar usuario'}" onclick="SGE.Usu.toggleActivo(${u.id})" aria-pressed="${u.estado==='Activo'}"><i class="bi ${u.estado==='Activo' ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted'}" aria-hidden="true"></i></button>` : ''}
               </div>
             </td>
           </tr>`;}).join('')}
@@ -218,6 +219,8 @@ SGE.Usu = {
     const u = SGE.DB.usuarios.find(x => x.id === id);
     if (!u) return;
     const activo = u.estado !== 'Activo';
+    const ok = await SGE.Confirm({ title: activo ? 'Activar usuario' : 'Desactivar usuario', text: `¿Confirma ${activo ? 'activar' : 'desactivar'} al usuario ${u.nombre}?` });
+    if (!ok) return;
     const areaId = u.empleado_area_id && u.empleado_area_id > 0 ? u.empleado_area_id : null;
     try {
       await SGE.Api.mutations.putUsuario(id, {
