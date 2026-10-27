@@ -267,7 +267,7 @@ SGE.Com = {
       d = await SGE.Api.mutations.getOrdenCompraDetalle(ordenCompraId);
     } catch (e) {
       SGE.Modal.close('modal-compra-detail');
-      SGE.Toast.show(e.message || 'No se pudo cargar el detalle', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cargar el detalle de la compra.', 'error');
       return;
     }
     const eCls = { Confirmada:'badge-active', Pendiente:'badge-pending', Cancelada:'badge-danger' }[(d && d.estado) || oc.estado] || 'badge-info';
@@ -343,7 +343,7 @@ SGE.Com = {
       SGE.Com.calcTotals();
       SGE.Modal.open('modal-compra');
     } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo cargar la orden', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cargar la orden de compra.', 'error');
     }
   },
 
@@ -355,7 +355,7 @@ SGE.Com = {
         SGE.Toast.show('Orden confirmada. Inventario actualizado.');
         SGE.Router.navigate('compras');
       } catch (e) {
-        SGE.Toast.show(e.message || 'No se pudo confirmar', 'error');
+        SGE.Toast.show(e.message || 'No fue posible confirmar la orden de compra.', 'error');
       }
     };
     SGE.Modal.open('modal-confirm-oc');
@@ -367,7 +367,7 @@ SGE.Com = {
       SGE.Toast.show('Orden cancelada', 'error');
       SGE.Router.navigate('compras');
     } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo cancelar', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cancelar la orden de compra.', 'error');
     }
   },
 
@@ -388,7 +388,11 @@ SGE.Com = {
 
   saveOrder: async () => {
     const prov = document.getElementById('compra-prov')?.value;
-    if (!prov) { SGE.Toast.show('Seleccione un proveedor', 'error'); return; }
+    if (!SGE.FormErrors.validar('modal-compra', [
+      { campo: 'compra-prov', valido: !!prov, mensaje: 'Debe seleccionar el proveedor de la orden.' },
+      { campo: 'compra-fecha', valido: !!document.getElementById('compra-fecha')?.value,
+        mensaje: 'La fecha de la orden es obligatoria.' }
+    ])) return;
     const lineas = SGE.Com.collectLineas();
     if (!lineas.length) { SGE.Toast.show('Agregue al menos un producto', 'error'); return; }
     const fecha = document.getElementById('compra-fecha')?.value;
@@ -410,7 +414,7 @@ SGE.Com = {
       SGE.Com._editOrdenCompraId = null;
       SGE.Router.navigate('compras');
     } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo registrar', 'error');
+      SGE.FormErrors.manejar(e, 'modal-compra', 'No fue posible registrar la orden de compra.');
     }
   },
 

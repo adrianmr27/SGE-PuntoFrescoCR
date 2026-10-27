@@ -17,6 +17,7 @@ public class SgePuntoFrescoDbContext : DbContext
     public DbSet<Permiso> Permisos => Set<Permiso>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Auditoria> Auditorias => Set<Auditoria>();
+    public DbSet<NotificacionEstado> NotificacionesEstado => Set<NotificacionEstado>();
     public DbSet<Area> Areas => Set<Area>();
     public DbSet<Empleado> Empleados => Set<Empleado>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
@@ -85,6 +86,17 @@ public class SgePuntoFrescoDbContext : DbContext
         {
             e.ToTable("Auditoria", "seg", t => t.UseSqlOutputClause(false));
             e.HasKey(x => x.AuditoriaId);
+        });
+
+        modelBuilder.Entity<NotificacionEstado>(e =>
+        {
+            e.ToTable("NotificacionEstado", "seg", t => t.UseSqlOutputClause(false));
+            e.HasKey(x => x.NotificacionEstadoId);
+            e.Property(x => x.Clave).HasMaxLength(80).IsRequired();
+            e.Property(x => x.Huella).HasMaxLength(64).IsRequired();
+            e.Property(x => x.Estado).HasMaxLength(20).IsRequired();
+            e.HasIndex(x => new { x.UsuarioId, x.Clave }).IsUnique();
+            e.HasOne(x => x.Usuario).WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Area>(e =>

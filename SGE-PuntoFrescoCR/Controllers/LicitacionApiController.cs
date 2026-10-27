@@ -19,7 +19,7 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpPost("licitaciones")]
     public async Task<ActionResult<int>> PostLicitacion([FromBody] LicitacionCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Crear, ct)) return SinPermiso("crear licitaciones");
         var id = await _service.CreateLicitacionAsync(dto, UsuarioOperador(), ct);
         return id == null ? BadRequest() : Ok(id.Value);
     }
@@ -27,7 +27,7 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpPut("licitaciones/{id:int}")]
     public async Task<IActionResult> PutLicitacion(int id, [FromBody] LicitacionCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
         var ok = await _service.UpdateLicitacionAsync(id, dto, ct);
         return ok ? NoContent() : NotFound();
     }
@@ -35,7 +35,7 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpGet("licitaciones/{id:int}/detalle")]
     public async Task<ActionResult<LicitacionDetalleCompletoDto>> GetLicitacionDetalle(int id, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Ver, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Ver, ct)) return SinPermiso("consultar licitaciones");
         var dto = await _service.GetLicitacionDetalleAsync(id, ct);
         return dto == null ? NotFound() : Ok(dto);
     }
@@ -43,8 +43,10 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpPost("licitaciones/{id:int}/documentos")]
     public async Task<ActionResult<int>> PostLicitacionDocumento(int id, [FromBody] LicitacionDocumentoCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
-        if (string.IsNullOrWhiteSpace(dto.NombreArchivo) || string.IsNullOrWhiteSpace(dto.RutaArchivo)) return BadRequest();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
+        if (string.IsNullOrWhiteSpace(dto.NombreArchivo) || string.IsNullOrWhiteSpace(dto.RutaArchivo))
+            return ErrorNegocio(ResultadoOperacion.Invalido("ARCHIVO_REQUERIDO",
+                "Debe indicar el nombre y la ruta del archivo adjunto.", "lic-doc-nombre"));
         var docId = await _service.AddLicitacionDocumentoAsync(id, UsuarioOperador(), dto, ct);
         return docId == null ? NotFound() : Ok(docId.Value);
     }
@@ -53,7 +55,7 @@ public class LicitacionApiController : BaseSpaApiController
     [RequestSizeLimit(12_000_000)]
     public async Task<ActionResult<int>> UploadLicitacionDocumento(int id, IFormFile file, [FromForm] string? tipoDocumento, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
         if (file == null || file.Length == 0) return BadRequest(new { error = "Seleccione un archivo." });
 
         var orig = Path.GetFileName(file.FileName);
@@ -100,7 +102,7 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpDelete("licitaciones/{id:int}/documentos/{documentoId:int}")]
     public async Task<IActionResult> DeleteLicitacionDocumento(int id, int documentoId, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
         var ok = await _service.DeleteLicitacionDocumentoAsync(id, documentoId, ct);
         return ok ? NoContent() : NotFound();
     }
@@ -108,8 +110,10 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpPost("licitaciones/{id:int}/recordatorios")]
     public async Task<ActionResult<int>> PostLicitacionRecordatorio(int id, [FromBody] LicitacionRecordatorioCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
-        if (string.IsNullOrWhiteSpace(dto.Titulo)) return BadRequest();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
+        if (string.IsNullOrWhiteSpace(dto.Titulo))
+            return ErrorNegocio(ResultadoOperacion.Invalido("TITULO_REQUERIDO",
+                "El título del recordatorio es obligatorio.", "lic-rec-titulo"));
         var recId = await _service.AddLicitacionRecordatorioAsync(id, dto, ct);
         return recId == null ? NotFound() : Ok(recId.Value);
     }
@@ -117,7 +121,7 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpPost("licitaciones/{id:int}/recordatorios/{recordatorioId:int}/marcar-enviado")]
     public async Task<IActionResult> PostLicitacionRecordatorioMarcarEnviado(int id, int recordatorioId, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
         var ok = await _service.MarkLicitacionRecordatorioEnviadoAsync(id, recordatorioId, ct);
         return ok ? NoContent() : NotFound();
     }
@@ -125,7 +129,7 @@ public class LicitacionApiController : BaseSpaApiController
     [HttpDelete("licitaciones/{id:int}/recordatorios/{recordatorioId:int}")]
     public async Task<IActionResult> DeleteLicitacionRecordatorio(int id, int recordatorioId, CancellationToken ct)
     {
-        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("LICITACIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar licitaciones");
         var ok = await _service.DeleteLicitacionRecordatorioAsync(id, recordatorioId, ct);
         return ok ? NoContent() : NotFound();
     }

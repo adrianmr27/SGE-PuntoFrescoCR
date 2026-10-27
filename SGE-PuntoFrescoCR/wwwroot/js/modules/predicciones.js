@@ -100,7 +100,7 @@ SGE.Pre = {
       SGE.Toast.show('Predicciones actualizadas');
       SGE.Router.navigate('predicciones');
     } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo recalcular', 'error');
+      SGE.Toast.show(e.message || 'No fue posible recalcular las predicciones.', 'error');
     }
   },
 

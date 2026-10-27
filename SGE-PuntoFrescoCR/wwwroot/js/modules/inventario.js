@@ -296,7 +296,11 @@ SGE.Inv = {
 
   saveCategory: async () => {
     const nombre = document.getElementById('cat-nombre')?.value?.trim();
-    if (!nombre) { SGE.Toast.show('Ingrese un nombre de categoría', 'error'); return; }
+    if (!SGE.FormErrors.validar('modal-categoria', [
+      { campo: 'cat-nombre', valido: !!nombre, mensaje: 'El nombre de la categoría es obligatorio.' },
+      { campo: 'cat-nombre', valido: !nombre || nombre.length >= 3,
+        mensaje: 'El nombre de la categoría debe tener al menos 3 caracteres.' }
+    ])) return;
     try {
       if (!SGE.Api?.mutations?.postCategoria) {
         SGE.Toast.show('Función de creación de categorías no disponible en esta versión', 'error');
@@ -308,7 +312,7 @@ SGE.Inv = {
       // Volver a la vista de inventario para recargar listas y selects
       SGE.Router.navigate('inventario');
     } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo crear la categoría', 'error');
+      SGE.FormErrors.manejar(e, 'modal-categoria', 'No fue posible crear la categoría.');
     }
   },
 
@@ -362,10 +366,20 @@ SGE.Inv = {
       stockMinimo: parseInt(document.getElementById('prod-stock-min')?.value, 10) || 0,
       activo: document.getElementById('prod-estado')?.value === '1'
     };
-    if (!nombre || !categoriaId || !paramIva) {
-      SGE.Toast.show('Complete categoría, IVA y nombre', 'error');
-      return;
-    }
+    if (!SGE.FormErrors.validar('modal-producto', [
+      { campo: 'prod-nombre', valido: !!nombre, mensaje: 'El nombre del producto es obligatorio.' },
+      { campo: 'prod-cat', valido: !!categoriaId, mensaje: 'Debe seleccionar una categoría.' },
+      { campo: 'prod-iva', valido: !!paramIva, mensaje: 'Debe seleccionar el IVA aplicable.' },
+      { campo: 'prod-pcompra', valido: body.precioCompra >= 0,
+        mensaje: 'El precio de compra no puede ser negativo.' },
+      { campo: 'prod-pventa', valido: body.precioVenta >= 0,
+        mensaje: 'El precio de venta no puede ser negativo.' },
+      { campo: 'prod-pventa', valido: !(body.precioCompra > 0 && body.precioVenta > 0) || body.precioVenta >= body.precioCompra,
+        mensaje: 'El precio de venta no debería ser menor que el de compra. Revise los montos.' },
+      { campo: 'prod-stock', valido: body.stock >= 0, mensaje: 'El stock no puede ser negativo.' },
+      { campo: 'prod-stock-min', valido: body.stockMinimo >= 0,
+        mensaje: 'El stock mínimo no puede ser negativo.' }
+    ])) return;
     if (!SGE.Validate.numeroPositivo(body.precioCompra, false) || !SGE.Validate.numeroPositivo(body.precioVenta, false)) {
       SGE.Toast.show('Los precios deben ser números mayores que cero', 'error');
       return;
@@ -384,7 +398,7 @@ SGE.Inv = {
       SGE.Toast.show('Producto guardado');
       SGE.Router.navigate('inventario');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error al guardar', 'error');
+      SGE.FormErrors.manejar(e, 'modal-producto', 'No fue posible guardar el producto.');
     }
   },
 
@@ -409,7 +423,7 @@ SGE.Inv = {
       SGE.Toast.show('Estado actualizado');
       SGE.Router.navigate('inventario');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cambiar el estado del producto.', 'error');
     }
   },
 

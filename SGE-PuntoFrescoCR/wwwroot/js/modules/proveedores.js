@@ -153,24 +153,27 @@ SGE.Prov = {
       });
       SGE.Toast.show(p.estado === 'Activo' ? 'Proveedor desactivado' : 'Proveedor activado');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cambiar el estado del proveedor.', 'error');
     }
   },
   save: async () => {
     const nombre = document.getElementById('prov-nombre')?.value.trim();
     const ident = document.getElementById('prov-id')?.value.trim();
-    if (!nombre || !ident) { SGE.Toast.show('Nombre e identificación requeridos', 'error'); return; }
-    if (!SGE.Validate.identificacion(ident)) {
-      SGE.Toast.show('La identificación debe tener entre 9 y 12 dígitos', 'error'); return;
-    }
     const provTel = document.getElementById('prov-tel')?.value;
-    if (!SGE.Validate.telefono(provTel)) {
-      SGE.Toast.show('El teléfono no es válido', 'error'); return;
-    }
     const provMail = document.getElementById('prov-email')?.value?.trim();
-    if (provMail && !SGE.Validate.email(provMail)) {
-      SGE.Toast.show('El correo no es válido', 'error'); return;
-    }
+
+    if (!SGE.FormErrors.validar('modal-proveedor', [
+      { campo: 'prov-nombre', valido: !!nombre, mensaje: 'El nombre es obligatorio.' },
+      { campo: 'prov-id', valido: !!ident, mensaje: 'La identificación es obligatoria.' },
+      { campo: 'prov-id', valido: !ident || /^[\d\s-]+$/.test(ident),
+        mensaje: 'La identificación solo admite números y guiones.' },
+      { campo: 'prov-id', valido: !ident || SGE.Validate.identificacion(ident),
+        mensaje: `La identificación debe tener entre 9 y 12 dígitos (tiene ${(ident.match(/\d/g) || []).length}).` },
+      { campo: 'prov-tel', valido: SGE.Validate.telefono(provTel),
+        mensaje: 'El teléfono debe tener entre 8 y 15 dígitos.' },
+      { campo: 'prov-email', valido: !provMail || SGE.Validate.email(provMail),
+        mensaje: 'El correo no tiene un formato válido (ejemplo: nombre@empresa.cr).' }
+    ])) return;
     const body = {
       nombre,
       identificacion: ident,
@@ -189,7 +192,7 @@ SGE.Prov = {
       window._provEditId = null;
       SGE.Toast.show('Proveedor guardado');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-proveedor', 'No fue posible guardar el proveedor.');
     }
   }
 };

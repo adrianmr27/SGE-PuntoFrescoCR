@@ -11,17 +11,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SGE Punto Fresco</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous" />
+  <link rel="icon" type="image/png" href="@(Url.Content("~/PuntoFrescoCR.png"))" />
   <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
 </head>
 <body>
 
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-icon"><i class="bi bi-briefcase-fill" aria-hidden="true"></i></div>
-      <div class="sidebar-logo-text">
-        <h1>Punto Fresco de Costa Rica</h1>
-        <span>Sistema de Gestión Empresarial</span>
+    <div class="sidebar-logo" style="display:flex;align-items:center;gap:12px;">
+      <div class="sidebar-logo-icon" style="flex:0 0 auto;">
+        <img src="@(Url.Content("~/PuntoFrescoCR.png"))" alt="Punto Fresco de Costa Rica" style="height:64px; width:auto; background:#ffffff; padding:8px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08); display:block;" />
+      </div>
+      <div class="sidebar-logo-text" style="flex:1 1 auto; min-width:0; max-width:140px;">
+        <h1 style="margin:0; font-size:.95rem; line-height:1.05; font-weight:600; overflow-wrap:break-word; word-break:break-word; white-space:normal;">Punto Fresco de Costa Rica</h1>
+        <span style="display:block; font-size:.78rem; color:var(--text-muted); overflow-wrap:break-word; word-break:break-word; white-space:normal;">Sistema de Gestión Empresarial</span>
       </div>
     </div>
 
@@ -157,6 +160,8 @@
     <script src="~/js/core/notifications.js" asp-append-version="true"></script>
     <script src="~/js/services/httpClient.js" asp-append-version="true"></script>
     <script src="~/js/core/validation.js" asp-append-version="true"></script>
+    <script src="~/js/core/formErrors.js" asp-append-version="true"></script>
+    <script src="~/js/core/sessionWatch.js" asp-append-version="true"></script>
     <script src="~/js/services/spaService.js" asp-append-version="true"></script>
     <!-- Sprint 1 Adrián -->
     <script src="~/js/modules/administrativo.js" asp-append-version="true"></script>
@@ -190,12 +195,16 @@
     
 <script>
   window.SGE_CURRENT_USER_ID = @(int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var __uid) ? __uid : 0);
+  window.SGE_CURRENT_USER_ROL = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rol));
 </script>
 <script>
   document.addEventListener('DOMContentLoaded', async () => {
     SGE.Modal.init();
     SGE.initSidebar();
     if (typeof SGE.Notifications?.init === 'function') SGE.Notifications.init();
+    // Deja abierto el canal que permite cerrar la sesión en el acto si
+    // desactivan la cuenta o si se inicia sesión en otro equipo.
+    if (typeof SGE.SessionWatch?.init === 'function') SGE.SessionWatch.init();
     SGE.showLoadingSkeleton();
 
     let start = 'dashboard';

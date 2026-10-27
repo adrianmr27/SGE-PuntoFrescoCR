@@ -372,20 +372,25 @@ SGE.Adm = {
       // refresh administrativo view to reflect change
       SGE.Router.refresh();
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cambiar el estado del parámetro.', 'error');
     }
   },
   saveParam: async () => {
     const tipo = document.getElementById('p-tipo')?.value?.trim();
     const nombre = document.getElementById('p-nombre')?.value?.trim();
     let valor = document.getElementById('p-valor')?.value?.trim() || '';
-    if (!tipo || !nombre || !valor) { SGE.Toast.show('Complete tipo, nombre y valor', 'error'); return; }
-    if (tipo === 'Impuesto' || tipo === 'Descuento') {
-      const num = parseFloat(String(valor).replace('%', '').replace(',', '.'));
-      if (Number.isNaN(num) || num < 0 || num > 100) {
-        SGE.Toast.show('El valor debe ser un porcentaje numérico entre 0 y 100', 'error'); return;
-      }
-    }
+    const esPorcentaje = tipo === 'Impuesto' || tipo === 'Descuento';
+    const num = parseFloat(String(valor).replace('%', '').replace(',', '.'));
+
+    if (!SGE.FormErrors.validar('modal-param', [
+      { campo: 'p-tipo', valido: !!tipo, mensaje: 'Debe seleccionar el tipo de parámetro.' },
+      { campo: 'p-nombre', valido: !!nombre, mensaje: 'El nombre del parámetro es obligatorio.' },
+      { campo: 'p-valor', valido: !!valor, mensaje: 'El valor es obligatorio.' },
+      { campo: 'p-valor', valido: !esPorcentaje || !Number.isNaN(num),
+        mensaje: 'El valor debe ser numérico (ejemplo: 13 o 13%).' },
+      { campo: 'p-valor', valido: !esPorcentaje || Number.isNaN(num) || (num >= 0 && num <= 100),
+        mensaje: 'El porcentaje debe estar entre 0 y 100.' }
+    ])) return;
     if (tipo === 'Impuesto' && !valor.endsWith('%')) valor += '%';
     const activo = document.getElementById('p-estado-sw')?.classList.contains('on') ?? true;
     const desc = document.getElementById('p-desc')?.value?.trim() || null;
@@ -399,7 +404,7 @@ SGE.Adm = {
       window._paramEditId = null;
       SGE.Toast.show('Parámetro guardado');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-param', 'No fue posible guardar el parámetro.');
     }
   },
 };

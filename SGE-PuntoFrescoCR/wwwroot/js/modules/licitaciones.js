@@ -1,4 +1,4 @@
-﻿/* SGE Punto Fresco - Licitaciones */
+/* SGE Punto Fresco - Licitaciones */
 'use strict';
 
 SGE.Router.register('licitaciones', () => {
@@ -594,7 +594,10 @@ SGE.Lic = {
         const inst = document.getElementById('lic-inst')?.value?.trim();
         const desc = document.getElementById('lic-desc')?.value?.trim();
         if (!inst || !desc) {
-            SGE.Toast.show('Institución y descripción son obligatorios', 'error');
+            SGE.FormErrors.validar('modal-licitacion', [
+                { campo: 'lic-inst', valido: !!inst, mensaje: 'La institución es obligatoria.' },
+                { campo: 'lic-desc', valido: !!desc, mensaje: 'La descripción es obligatoria.' }
+            ]);
             return;
         }
         const lineas = SGE.Lic.collectLineas();
@@ -637,7 +640,7 @@ SGE.Lic = {
             SGE.Toast.show('Licitación guardada');
             SGE.Router.navigate('licitaciones');
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo guardar', 'error');
+            SGE.FormErrors.manejar(e, 'modal-licitacion', 'No fue posible guardar la licitación.');
         }
     },
 
@@ -703,7 +706,7 @@ SGE.Lic = {
             d = await SGE.Api.mutations.getLicitacionDetalle(l.licitacion_id);
         } catch (e) {
             if (bodyEl) bodyEl.innerHTML = `<p style="color:var(--coral);">${String(e.message || 'Error al cargar')}</p>`;
-            SGE.Toast.show(e.message || 'No se pudo cargar el detalle', 'error');
+            SGE.Toast.show(e.message || 'No fue posible cargar el detalle de la licitación.', 'error');
             return;
         }
         SGE.Lic._lastDetail = d;
@@ -795,7 +798,10 @@ SGE.Lic = {
         const titulo = document.getElementById('lic-reminder-titulo')?.value?.trim();
         const fecha = document.getElementById('lic-reminder-fecha')?.value;
         if (!titulo || !fecha) {
-            SGE.Toast.show('Complete título y fecha', 'error');
+            SGE.FormErrors.validar('modal-lic-reminder-form', [
+                { campo: 'lic-reminder-titulo', valido: !!titulo, mensaje: 'El título del recordatorio es obligatorio.' },
+                { campo: 'lic-reminder-fecha', valido: !!fecha, mensaje: 'La fecha del recordatorio es obligatoria.' }
+            ]);
             return;
         }
         try {
@@ -806,7 +812,7 @@ SGE.Lic = {
             if (row) await SGE.Lic.view(row.id);
             if (typeof SGE.Notifications?.syncFromBootstrap === 'function') SGE.Notifications.syncFromBootstrap();
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo crear recordatorio', 'error');
+            SGE.FormErrors.manejar(e, 'modal-lic-reminder-form', 'No fue posible crear el recordatorio.');
         }
     },
 
@@ -898,7 +904,7 @@ SGE.Lic = {
             if (row) await SGE.Lic.view(row.id);
             if (typeof SGE.Notifications?.syncFromBootstrap === 'function') SGE.Notifications.syncFromBootstrap();
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo subir el archivo', 'error');
+            SGE.FormErrors.manejar(e, 'modal-lic-upload', 'No fue posible adjuntar el archivo.');
         }
     },
 
@@ -909,7 +915,7 @@ SGE.Lic = {
             const row = SGE.DB.licitaciones.find(x => x.licitacion_id === SGE.Lic._selectedLicId);
             if (row) await SGE.Lic.view(row.id);
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo eliminar', 'error');
+            SGE.Toast.show(e.message || 'No fue posible eliminar el documento adjunto.', 'error');
         }
     },
 
@@ -921,7 +927,7 @@ SGE.Lic = {
             if (row) await SGE.Lic.view(row.id);
             if (typeof SGE.Notifications?.syncFromBootstrap === 'function') SGE.Notifications.syncFromBootstrap();
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo eliminar', 'error');
+            SGE.Toast.show(e.message || 'No fue posible eliminar el recordatorio.', 'error');
         }
     },
 

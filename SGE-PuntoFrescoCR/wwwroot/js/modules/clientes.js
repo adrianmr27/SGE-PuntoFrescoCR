@@ -153,24 +153,27 @@ SGE.Cli = {
       });
       SGE.Toast.show(c.estado === 'Activo' ? 'Cliente desactivado' : 'Cliente activado');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cambiar el estado del cliente.', 'error');
     }
   },
   save: async () => {
     const nombre = document.getElementById('cli-nombre')?.value.trim();
     const ident = document.getElementById('cli-id')?.value.trim();
-    if (!nombre || !ident) { SGE.Toast.show('Nombre e identificación requeridos', 'error'); return; }
-    if (!SGE.Validate.identificacion(ident)) {
-      SGE.Toast.show('La identificación debe tener entre 9 y 12 dígitos', 'error'); return;
-    }
     const cliTel = document.getElementById('cli-tel')?.value;
-    if (!SGE.Validate.telefono(cliTel)) {
-      SGE.Toast.show('El teléfono no es válido', 'error'); return;
-    }
     const cliMail = document.getElementById('cli-email')?.value?.trim();
-    if (cliMail && !SGE.Validate.email(cliMail)) {
-      SGE.Toast.show('El correo no es válido', 'error'); return;
-    }
+
+    if (!SGE.FormErrors.validar('modal-cliente', [
+      { campo: 'cli-nombre', valido: !!nombre, mensaje: 'El nombre es obligatorio.' },
+      { campo: 'cli-id', valido: !!ident, mensaje: 'La identificación es obligatoria.' },
+      { campo: 'cli-id', valido: !ident || /^[\d\s-]+$/.test(ident),
+        mensaje: 'La identificación solo admite números y guiones.' },
+      { campo: 'cli-id', valido: !ident || SGE.Validate.identificacion(ident),
+        mensaje: `La identificación debe tener entre 9 y 12 dígitos (tiene ${(ident.match(/\d/g) || []).length}).` },
+      { campo: 'cli-tel', valido: SGE.Validate.telefono(cliTel),
+        mensaje: 'El teléfono debe tener entre 8 y 15 dígitos.' },
+      { campo: 'cli-email', valido: !cliMail || SGE.Validate.email(cliMail),
+        mensaje: 'El correo no tiene un formato válido (ejemplo: nombre@empresa.cr).' }
+    ])) return;
     const body = {
       nombre,
       identificacion: ident,
@@ -189,7 +192,7 @@ SGE.Cli = {
       window._cliEditId = null;
       SGE.Toast.show('Cliente guardado');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-cliente', 'No fue posible guardar el cliente.');
     }
   }
 };

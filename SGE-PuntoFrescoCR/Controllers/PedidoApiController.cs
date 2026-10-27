@@ -12,7 +12,7 @@ public class PedidoApiController : BaseSpaApiController
     [HttpPost("pedidos")]
     public async Task<ActionResult<int>> PostPedido([FromBody] PedidoCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Crear, ct)) return SinPermiso("crear pedidos");
         var id = await _service.CreatePedidoAsync(dto, UsuarioOperador(), ct);
         return id == null ? BadRequest() : Ok(id.Value);
     }
@@ -20,7 +20,7 @@ public class PedidoApiController : BaseSpaApiController
     [HttpPut("pedidos/{id:int}")]
     public async Task<IActionResult> PutPedido(int id, [FromBody] PedidoUpdateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return SinPermiso("editar pedidos");
         var ok = await _service.UpdatePedidoBorradorAsync(id, dto, ct);
         return ok ? NoContent() : NotFound();
     }
@@ -28,7 +28,7 @@ public class PedidoApiController : BaseSpaApiController
     [HttpGet("pedidos/{id:int}/detalle")]
     public async Task<ActionResult<PedidoDetalleDto>> GetPedidoDetalle(int id, CancellationToken ct)
     {
-        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Ver, ct)) return Forbid();
+        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Ver, ct)) return SinPermiso("consultar pedidos");
         var dto = await _service.GetPedidoDetalleAsync(id, ct);
         return dto == null ? NotFound() : Ok(dto);
     }
@@ -36,7 +36,7 @@ public class PedidoApiController : BaseSpaApiController
     [HttpPost("pedidos/{id:int}/confirmar")]
     public async Task<IActionResult> ConfirmarPedido(int id, CancellationToken ct)
     {
-        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return SinPermiso("editar pedidos");
         try
         {
             await _service.ConfirmarPedidoAsync(id, UsuarioOperador(), ct);
@@ -51,7 +51,7 @@ public class PedidoApiController : BaseSpaApiController
     [HttpPost("pedidos/{id:int}/entregar")]
     public async Task<IActionResult> EntregarPedido(int id, CancellationToken ct)
     {
-        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return SinPermiso("editar pedidos");
         try
         {
             await _service.EntregarPedidoAsync(id, UsuarioOperador(), ct);
@@ -66,7 +66,7 @@ public class PedidoApiController : BaseSpaApiController
     [HttpPost("pedidos/{id:int}/cancelar")]
     public async Task<IActionResult> CancelarPedido(int id, [FromBody] PedidoCancelarDto? body, CancellationToken ct)
     {
-        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("PEDIDOS", PermisoAccion.Editar, ct)) return SinPermiso("editar pedidos");
         try
         {
             await _service.CancelarPedidoAsync(id, UsuarioOperador(), body?.Motivo, ct);

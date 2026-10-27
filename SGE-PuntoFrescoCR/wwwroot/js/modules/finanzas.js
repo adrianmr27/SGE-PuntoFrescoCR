@@ -436,7 +436,7 @@ SGE.Fin = {
       SGE.Toast.show(tipo === 'cobrar' ? 'Cobro registrado' : 'Pago registrado');
       SGE.Router.navigate('finanzas');
     } catch (e) {
-      SGE.Toast.show(e.message || 'No se pudo actualizar', 'error');
+      SGE.Toast.show(e.message || 'No fue posible actualizar el estado de la cuenta.', 'error');
     }
   },
 
@@ -448,17 +448,18 @@ SGE.Fin = {
       monto: parseFloat(document.getElementById('fin-mov-monto')?.value) || 0,
       fechaMovimiento: document.getElementById('fin-mov-fecha')?.value || null
     };
-    if (!body.descripcion || !body.monto) {
-      SGE.Toast.show('Complete descripción y monto', 'error');
-      return;
-    }
+    if (!SGE.FormErrors.validar('modal-mov-manual', [
+      { campo: 'fin-mov-desc', valido: !!body.descripcion, mensaje: 'La descripción del movimiento es obligatoria.' },
+      { campo: 'fin-mov-monto', valido: !!body.monto, mensaje: 'El monto es obligatorio.' },
+      { campo: 'fin-mov-monto', valido: body.monto > 0, mensaje: 'El monto debe ser un número mayor que cero.' }
+    ])) return;
     try {
       await SGE.Api.mutations.postMovFin(body);
       SGE.Modal.close('modal-mov-manual');
       SGE.Toast.show('Movimiento registrado');
       SGE.Router.navigate('finanzas');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-mov-manual', 'No fue posible registrar el movimiento.');
     }
   },
   saveCuentaCobrar: async () => {
@@ -467,10 +468,14 @@ SGE.Fin = {
     const concepto = document.getElementById('fin-cc-concepto')?.value?.trim() || '';
     const monto = parseFloat(document.getElementById('fin-cc-monto')?.value) || 0;
     const venc = document.getElementById('fin-cc-venc')?.value || '';
-    if (!cliente || !concepto || !monto || !venc) {
-      SGE.Toast.show('Complete cliente, concepto, monto y vencimiento', 'error');
-      return;
-    }
+    if (!SGE.FormErrors.validar('modal-cuenta-cobrar', [
+      { campo: 'fin-cc-cliente', valido: !!clienteNombre, mensaje: 'Debe indicar el cliente.' },
+      { campo: 'fin-cc-cliente', valido: !!cliente,
+        mensaje: 'No se encontró un cliente con ese nombre. Selecciónelo de la lista.' },
+      { campo: 'fin-cc-concepto', valido: !!concepto, mensaje: 'El concepto es obligatorio.' },
+      { campo: 'fin-cc-monto', valido: monto > 0, mensaje: 'El monto debe ser un número mayor que cero.' },
+      { campo: 'fin-cc-venc', valido: !!venc, mensaje: 'La fecha de vencimiento es obligatoria.' }
+    ])) return;
     try {
       await SGE.Api.mutations.postCuentaCobrar({
         clienteId: cliente.id,
@@ -482,7 +487,7 @@ SGE.Fin = {
       SGE.Toast.show('Cuenta por cobrar registrada');
       SGE.Router.navigate('finanzas');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-cuenta-cobrar', 'No fue posible guardar la cuenta por cobrar.');
     }
   },
   saveCuentaPagar: async () => {
@@ -490,10 +495,11 @@ SGE.Fin = {
     const concepto = document.getElementById('fin-cp-concepto')?.value?.trim() || '';
     const monto = parseFloat(document.getElementById('fin-cp-monto')?.value) || 0;
     const venc = document.getElementById('fin-cp-venc')?.value || '';
-    if (!concepto || !monto || !venc) {
-      SGE.Toast.show('Complete concepto, monto y vencimiento', 'error');
-      return;
-    }
+    if (!SGE.FormErrors.validar('modal-cuenta-pagar', [
+      { campo: 'fin-cp-concepto', valido: !!concepto, mensaje: 'El concepto es obligatorio.' },
+      { campo: 'fin-cp-monto', valido: monto > 0, mensaje: 'El monto debe ser un número mayor que cero.' },
+      { campo: 'fin-cp-venc', valido: !!venc, mensaje: 'La fecha de vencimiento es obligatoria.' }
+    ])) return;
     try {
       await SGE.Api.mutations.postCuentaPagar({
         proveedorId,
@@ -505,7 +511,7 @@ SGE.Fin = {
       SGE.Toast.show('Cuenta por pagar registrada');
       SGE.Router.navigate('finanzas');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-cuenta-pagar', 'No fue posible guardar la cuenta por pagar.');
     }
   }
 };

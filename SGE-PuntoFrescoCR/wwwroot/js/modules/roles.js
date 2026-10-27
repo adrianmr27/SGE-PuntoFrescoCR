@@ -159,7 +159,7 @@ SGE.Roles = {
       // Optionally refresh view to reflect new state
       SGE.Router.refresh();
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cambiar el estado del rol.', 'error');
     }
   },
   edit: (id) => {
@@ -197,7 +197,7 @@ SGE.Roles = {
       }).join('');
       SGE.Modal.open('modal-permisos');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error al cargar permisos', 'error');
+      SGE.Toast.show(e.message || 'No fue posible cargar los permisos del rol.', 'error');
     }
   },
   savePermisos: async () => {
@@ -216,12 +216,16 @@ SGE.Roles = {
       SGE.Modal.close('modal-permisos');
       SGE.Toast.show('Permisos actualizados');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-permisos', 'No fue posible guardar los permisos del rol.');
     }
   },
   save: async () => {
     const nombre = document.getElementById('rol-nombre')?.value.trim();
-    if (!nombre) { SGE.Toast.show('Ingrese el nombre del rol', 'error'); return; }
+    if (!SGE.FormErrors.validar('modal-rol', [
+      { campo: 'rol-nombre', valido: !!nombre, mensaje: 'El nombre del rol es obligatorio.' },
+      { campo: 'rol-nombre', valido: !nombre || nombre.length >= 3,
+        mensaje: 'El nombre del rol debe tener al menos 3 caracteres.' }
+    ])) return;
     const desc = document.getElementById('rol-desc')?.value || '';
     const sw = document.querySelector('#modal-rol .switch');
     const activo = sw?.classList.contains('on') ?? true;
@@ -235,7 +239,7 @@ SGE.Roles = {
       window._rolEditId = null;
       SGE.Toast.show('Rol guardado correctamente');
     } catch (e) {
-      SGE.Toast.show(e.message || 'Error', 'error');
+      SGE.FormErrors.manejar(e, 'modal-rol', 'No fue posible guardar el rol.');
     }
   },
 };

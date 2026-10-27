@@ -1,45 +1,26 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SGE_PuntoFrescoCRBLL.Dtos;
 using SGE_PuntoFrescoCRBLL.Services;
 
 namespace SGE_PuntoFrescoCR.Controllers;
 
-[Authorize]
-[ApiController]
-[Route("api/spa")]
-public class RolApiController : ControllerBase
+public class RolApiController : BaseSpaApiController
 {
     private readonly IRolService _rolService;
-    private readonly IPermisoService _permisoService;
-    private readonly AuditoriaService _auditoria;
 
     public RolApiController(IRolService rolService, IPermisoService permisoService, AuditoriaService auditoria)
+        : base(permisoService, auditoria)
     {
         _rolService = rolService;
-        _permisoService = permisoService;
-        _auditoria = auditoria;
     }
 
-    private int UsuarioOperador()
-    {
-        var v = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(v, out var id) ? id : 0;
-    }
-
-    private Task AuditarAsync(string accion, string? entidad = null, string? entidadId = null, string? detalle = null, CancellationToken ct = default)
-        => _auditoria.RegistrarAsync(UsuarioOperador(), User.FindFirstValue("usuario"), accion, entidad, entidadId, detalle, ct: ct);
-
-    private async Task<bool> PuedeAsync(PermisoAccion accion, CancellationToken ct)
-    {
-        return await _permisoService.TienePermisoAsync(UsuarioOperador(), "ROLES", accion, ct);
-    }
+    private Task<bool> PuedeAsync(PermisoAccion accion, CancellationToken ct)
+        => PuedeAsync("ROLES", accion, ct);
 
     [HttpGet("permisos/{rolId:int}")]
     public async Task<ActionResult<List<PermisoRolDto>>> GetPermisos(int rolId, CancellationToken ct)
     {
-        if (!await PuedeAsync(PermisoAccion.Ver, ct)) return Forbid();
+        if (!await PuedeAsync(PermisoAccion.Ver, ct)) return SinPermiso("consultar roles y permisos");
         var list = await _rolService.GetPermisosRolAsync(rolId, ct);
         return Ok(list);
     }
@@ -47,9 +28,9 @@ public class RolApiController : ControllerBase
     [HttpPost("roles")]
     public async Task<ActionResult<int>> PostRol([FromBody] RolCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync(PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync(PermisoAccion.Crear, ct)) return SinPermiso("crear roles");
         var id = await _rolService.CreateRolAsync(dto, ct);
-        if (id == null) return BadRequest();
+        if (id == null) return NoSeGuardo("No fue posible crear el rol. Verifique que el nombre no esté ya en uso.");
         await AuditarAsync("ROL_CREADO", "Rol", id.Value.ToString(), dto.Nombre, ct);
         return Ok(id.Value);
     }
@@ -57,9 +38,9 @@ public class RolApiController : ControllerBase
     [HttpPut("roles/{id:int}")]
     public async Task<IActionResult> PutRol(int id, [FromBody] RolUpdateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync(PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync(PermisoAccion.Editar, ct)) return SinPermiso("editar roles y permisos");
         var ok = await _rolService.UpdateRolAsync(id, dto, ct);
-        if (!ok) return NotFound();
+        if (!ok) return NoExiste("El rol");
         await AuditarAsync("ROL_EDITADO", "Rol", id.ToString(), ct: ct);
         return NoContent();
     }
@@ -67,9 +48,9 @@ public class RolApiController : ControllerBase
     [HttpPut("roles/{id:int}/permisos")]
     public async Task<IActionResult> PutPermisosRol(int id, [FromBody] List<PermisoModuloDto> filas, CancellationToken ct)
     {
-        if (!await PuedeAsync(PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync(PermisoAccion.Editar, ct)) return SinPermiso("editar roles y permisos");
         var ok = await _rolService.UpdatePermisosRolAsync(id, filas ?? new(), ct);
-        if (!ok) return NotFound();
+        if (!ok) return NoExiste("El rol");
         await AuditarAsync("ROL_PERMISOS_EDITADOS", "Rol", id.ToString(), ct: ct);
         return NoContent();
     }

@@ -63,7 +63,48 @@ public class Usuario
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// Identificador de la sesión vigente. Se regenera en cada inicio de sesión exitoso,
+    /// por lo que una sesión anterior queda invalidada automáticamente (sesión única por usuario).
+    /// Null = el usuario no tiene ninguna sesión abierta.
+    /// </summary>
+    public string? SesionToken { get; set; }
+
+    /// <summary>Momento en que se abrió la sesión vigente (UTC).</summary>
+    public DateTime? SesionIniciadaEn { get; set; }
+
+    /// <summary>Equipo / agente desde el que se abrió la sesión vigente (informativo para auditoría).</summary>
+    public string? SesionOrigen { get; set; }
+
     public Rol Rol { get; set; } = null!;
+}
+
+/// <summary>
+/// Estado por usuario de cada alerta del centro de notificaciones.
+/// Antes el descarte vivía solo en localStorage, por lo que era por navegador
+/// y no por usuario: dos personas en el mismo equipo compartían los descartes
+/// y la misma persona volvía a ver todo al cambiar de máquina.
+/// </summary>
+public class NotificacionEstado
+{
+    public long NotificacionEstadoId { get; set; }
+    public int UsuarioId { get; set; }
+
+    /// <summary>Clave estable de la alerta (por ejemplo "cc-14", "inv-stock-bajo").</summary>
+    public string Clave { get; set; } = null!;
+
+    /// <summary>
+    /// Huella del contenido de la alerta cuando se ocultó. Si el registro de origen
+    /// cambia (monto, fecha, estado), la huella cambia y la alerta vuelve a mostrarse.
+    /// </summary>
+    public string Huella { get; set; } = null!;
+
+    /// <summary>Oculta | Leida</summary>
+    public string Estado { get; set; } = "Oculta";
+
+    public DateTime FechaHora { get; set; }
+
+    public Usuario Usuario { get; set; } = null!;
 }
 
 public class Auditoria

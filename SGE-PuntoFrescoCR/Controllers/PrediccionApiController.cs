@@ -11,7 +11,7 @@ public class PrediccionApiController : BaseSpaApiController
     [HttpPost("predicciones/recalcular")]
     public async Task<IActionResult> RecalcularPredicciones(CancellationToken ct)
     {
-        if (!await PuedeAsync("PREDICCIONES", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("PREDICCIONES", PermisoAccion.Editar, ct)) return SinPermiso("editar predicciones");
         await _service.RecalcularPrediccionesAsync(ct);
         return NoContent();
     }

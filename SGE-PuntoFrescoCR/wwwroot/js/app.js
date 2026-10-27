@@ -504,7 +504,7 @@ function showLoadingSkeleton() {
 }
 
 window.SGE = { Router, Modal, Toast, DB, fmt, initView, initSidebar, canAccessView, hideUnauthorizedActions, loadPartialView, VIEW_SESSION_KEY, sortTableRows, showLoadingSkeleton };
-// Aplica permisos de rol: bloquea módulos sin permiso (visible pero no clickeable)
+// Aplica permisos de rol: oculta módulos sin permiso y el título de la sección si no queda ninguno.
 SGE.applyPermissions = function () {
   try {
     const db = SGE.DB;
@@ -523,6 +523,19 @@ SGE.applyPermissions = function () {
       el.style.opacity = '';
       el.style.pointerEvents = '';
       el.title = '';
+    });
+
+    document.querySelectorAll('.sidebar-nav .nav-section').forEach(section => {
+      const items = [...section.querySelectorAll('.nav-item[data-modulo]')];
+      const gated = items.filter(el => {
+        const name = el.dataset.modulo;
+        return db.modulos.some(mm => mm.nombre === name || (mm.codigo && mm.codigo === name));
+      });
+      const hayModuloConPermiso = gated.some(el => el.style.display !== 'none');
+      const hayItemVisible = items.some(el => el.style.display !== 'none');
+      const label = section.querySelector('.nav-section-label');
+      if (label && gated.length) label.hidden = !hayModuloConPermiso;
+      section.hidden = !hayItemVisible;
     });
   } catch (e) { console.error('applyPermissions', e); }
 };

@@ -33,6 +33,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFinanzaService, FinanzaService>();
         services.AddScoped<IPrediccionService, PrediccionService>();
         services.AddScoped<IPermisoService, PermisoService>();
+        services.AddScoped<INotificacionService, NotificacionService>();
+        services.AddScoped<SesionService>();
+
+        // Singleton a propósito: el bus mantiene en memoria las pestañas suscritas,
+        // por lo que debe sobrevivir a las peticiones individuales.
+        services.AddSingleton<ISesionEventBus, SesionEventBus>();
         services.AddScoped<EmpresaBllService>();
 
         return services;

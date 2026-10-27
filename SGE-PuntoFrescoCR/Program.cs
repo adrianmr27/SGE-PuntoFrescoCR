@@ -131,8 +131,20 @@ if (disableLogin)
 
 app.UseAuthorization();
 
-// RQNF-003: si el administrador desactiva la cuenta, la sesión activa se cierra
-// de inmediato en la siguiente solicitud (no espera a que expire la cookie).
+/* ── Validación de sesión en cada solicitud ────────────────────────────────
+   Cubre tres casos con una sola consulta:
+
+     1. La cuenta fue desactivada  → se expulsa.
+     2. La cookie trae un identificador de sesión que ya no es el vigente,
+        porque la persona inició sesión en otro equipo → se expulsa la anterior
+        (sesión única por usuario).
+     3. La cookie es anterior a esta versión y no trae identificador → se fuerza
+        un inicio de sesión limpio, una sola vez.
+
+   Esto es la red de seguridad. El cierre *inmediato*, sin esperar a que el
+   usuario haga una petición, lo entrega el canal SSE de SesionApiController;
+   este middleware garantiza que, aunque ese canal falle o esté cerrado, una
+   sesión revocada nunca sobreviva más allá de la siguiente solicitud. */
 if (!disableLogin)
 {
     app.Use(async (context, next) =>
@@ -142,18 +154,32 @@ if (!disableLogin)
             var idClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (int.TryParse(idClaim, out var usuarioId) && usuarioId > 0)
             {
-                var authSvc = context.RequestServices.GetRequiredService<AuthService>();
-                var usuario = await authSvc.ObtenerUsuarioConRolAsync(usuarioId, context.RequestAborted);
-                if (usuario == null || !usuario.Activo)
+                var sesiones = context.RequestServices.GetRequiredService<SesionService>();
+                var token = context.User.FindFirstValue(SesionService.ClaimSesion);
+                var estado = await sesiones.ValidarAsync(usuarioId, token, context.RequestAborted);
+
+                if (estado != EstadoSesion.Valida)
                 {
                     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    var motivo = estado switch
+                    {
+                        EstadoSesion.CuentaDesactivada => "cuenta_desactivada",
+                        EstadoSesion.Reemplazada => "sesion_reemplazada",
+                        _ => "sesion_invalida"
+                    };
+
                     var path = context.Request.Path.Value ?? "";
                     if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
                     {
+                        // El cliente distingue el motivo por esta cabecera y muestra
+                        // el mensaje correcto en la pantalla de inicio de sesión.
+                        context.Response.Headers["X-Sesion-Motivo"] = motivo;
                         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                         return;
                     }
-                    context.Response.Redirect("/Account/Login");
+
+                    context.Response.Redirect($"/Account/Login?motivo={motivo}");
                     return;
                 }
             }

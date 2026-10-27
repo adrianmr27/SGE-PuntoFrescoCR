@@ -12,15 +12,15 @@ public class ParametroApiController : BaseSpaApiController
     [HttpPut("parametros/{id:int}")]
     public async Task<IActionResult> PutParametro(int id, [FromBody] ParametroMutateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("ADMINISTRATIVO", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("ADMINISTRATIVO", PermisoAccion.Editar, ct)) return SinPermiso("editar parámetros administrativos");
         var ok = await _service.UpdateParametroAsync(id, dto, ct);
         return ok ? NoContent() : NotFound();
     }
 
     [HttpPost("parametros")]
-    public async Task<ActionResult<int>> PostParametro([FromBody] ParametroCreateDto dto, CancellationToken ct)
+    public async Task<IActionResult> PostParametro([FromBody] ParametroCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("ADMINISTRATIVO", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("ADMINISTRATIVO", PermisoAccion.Crear, ct)) return SinPermiso("crear parámetros administrativos");
         var id = await _service.CreateParametroAsync(dto, ct);
         return id == null ? BadRequest() : Ok(id.Value);
     }

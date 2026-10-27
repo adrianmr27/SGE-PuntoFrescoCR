@@ -391,7 +391,7 @@ SGE.Ped = {
             d = await SGE.Api.mutations.getPedidoDetalle(pedidoId);
         } catch (e) {
             SGE.Modal.close('modal-pedido-detail');
-            SGE.Toast.show(e.message || 'No se pudo cargar el detalle', 'error');
+            SGE.Toast.show(e.message || 'No fue posible cargar el detalle del pedido.', 'error');
             return;
         }
         const cli = (SGE.DB.clientes || []).find(c => c.nombre === ped.cliente);
@@ -456,7 +456,7 @@ SGE.Ped = {
         } catch (e) {
             SGE.Modal.close('modal-pedido');
             SGE.Ped._editPedidoId = null;
-            SGE.Toast.show(e.message || 'No se pudo cargar el pedido', 'error');
+            SGE.Toast.show(e.message || 'No fue posible cargar el pedido.', 'error');
             return;
         }
         if (!d) {
@@ -521,7 +521,7 @@ SGE.Ped = {
             SGE.Toast.show('Pedido confirmado');
             SGE.Router.navigate('pedidos');
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo confirmar', 'error');
+            SGE.Toast.show(e.message || 'No fue posible confirmar el pedido.', 'error');
         }
     },
 
@@ -542,7 +542,7 @@ SGE.Ped = {
             SGE.Toast.show('Pedido marcado como entregado');
             SGE.Router.navigate('pedidos');
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo marcar como entregado', 'error');
+            SGE.Toast.show(e.message || 'No fue posible marcar el pedido como entregado.', 'error');
         }
     },
     // Id del pedido que se está cancelando (si hay modal abierto)
@@ -567,7 +567,7 @@ SGE.Ped = {
             SGE.Toast.show('Pedido cancelado', 'success');
             SGE.Router.navigate('pedidos');
         } catch (e) {
-            SGE.Toast.show(e.message || 'No se pudo cancelar', 'error');
+            SGE.Toast.show(e.message || 'No fue posible cancelar el pedido.', 'error');
         } finally {
             SGE.Ped._cancelPedidoId = null;
         }
@@ -575,7 +575,11 @@ SGE.Ped = {
 
     saveOrder: async () => {
         const cli = document.getElementById('ped-cliente')?.value;
-        if (!cli) { SGE.Toast.show('Seleccione un cliente', 'error'); return; }
+        if (!SGE.FormErrors.validar('modal-pedido', [
+            { campo: 'ped-cliente', valido: !!cli, mensaje: 'Debe seleccionar el cliente del pedido.' },
+            { campo: 'ped-fecha', valido: !!document.getElementById('ped-fecha')?.value,
+              mensaje: 'La fecha del pedido es obligatoria.' }
+        ])) return;
         const lineas = SGE.Ped.collectLineas();
         if (!lineas.length) { SGE.Toast.show('Agregue al menos un producto', 'error'); return; }
         const fecha = document.getElementById('ped-fecha')?.value;
@@ -604,7 +608,7 @@ SGE.Ped = {
             SGE.Toast.show(wasEdit ? 'Pedido actualizado' : 'Pedido registrado (borrador). Confirme desde la tabla.');
             SGE.Router.navigate('pedidos');
         } catch (e) {
-            SGE.Toast.show(e.message || 'Error al guardar pedido', 'error');
+            SGE.FormErrors.manejar(e, 'modal-pedido', 'No fue posible guardar el pedido.');
         }
     },
 

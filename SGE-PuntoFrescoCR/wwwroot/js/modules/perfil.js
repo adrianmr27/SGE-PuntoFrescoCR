@@ -1,4 +1,4 @@
-﻿/* Module: perfil.js - ensures detailed mi-perfil router registration remains available */
+/* Module: perfil.js - ensures detailed mi-perfil router registration remains available */
 // This module overrides mi-perfil registration to the detailed employee/profile implementation
 // Use the data already present in SGE.DB to render the profile
 SGE.Router.register('mi-perfil', () => {
@@ -58,20 +58,18 @@ SGE.Router.register('mi-perfil', () => {
 SGE.Perfil = {
     saveYo: async () => {
         const tel = document.getElementById('yo-tel')?.value;
-        if (!SGE.Validate.telefono(tel)) {
-            SGE.Toast.show('El teléfono no es válido', 'error');
-            return;
-        }
         const correo = document.getElementById('yo-email')?.value?.trim();
-        if (correo && !SGE.Validate.email(correo)) {
-            SGE.Toast.show('El correo no es válido', 'error');
-            return;
-        }
         const emergT = document.getElementById('yo-emerg-t')?.value?.trim();
-        if (emergT && !SGE.Validate.telefono(emergT)) {
-            SGE.Toast.show('El teléfono de emergencia no es válido', 'error');
-            return;
-        }
+
+        // Mi perfil no vive en un modal: se valida sobre la página completa.
+        if (!SGE.FormErrors.validar(null, [
+            { campo: 'yo-tel', valido: SGE.Validate.telefono(tel),
+              mensaje: 'El teléfono debe tener entre 8 y 15 dígitos.' },
+            { campo: 'yo-email', valido: !correo || SGE.Validate.email(correo),
+              mensaje: 'El correo no tiene un formato válido (ejemplo: nombre@puntofresco.cr).' },
+            { campo: 'yo-emerg-t', valido: !emergT || SGE.Validate.telefono(emergT),
+              mensaje: 'El teléfono de emergencia debe tener entre 8 y 15 dígitos.' }
+        ])) return;
         const body = {
             telefono: tel || null,
             correo: correo || null,
@@ -84,7 +82,7 @@ SGE.Perfil = {
             await SGE.Api.mutations.putEmpleadoYo(body);
             SGE.Toast.show('Perfil actualizado');
         } catch (e) {
-            SGE.Toast.show(e.message || 'Error', 'error');
+            SGE.Toast.show(e.message || 'No fue posible guardar los cambios de su perfil.', 'error');
         }
     }
 };

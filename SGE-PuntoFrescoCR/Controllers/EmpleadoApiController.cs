@@ -12,9 +12,9 @@ public class EmpleadoApiController : BaseSpaApiController
     [HttpPost("empleados")]
     public async Task<ActionResult<int>> PostEmpleado([FromBody] EmpleadoCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("EMPLEADOS", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("EMPLEADOS", PermisoAccion.Crear, ct)) return SinPermiso("crear empleados");
         var id = await _service.CreateEmpleadoAsync(dto, ct);
-        if (id == null) return BadRequest();
+        if (id == null) return NoSeGuardo("No fue posible crear el empleado. Verifique que la identificación no esté ya registrada.");
         await AuditarAsync("EMPLEADO_CREADO", "Empleado", id.Value.ToString(), ct: ct);
         return Ok(id.Value);
     }
@@ -22,9 +22,9 @@ public class EmpleadoApiController : BaseSpaApiController
     [HttpPut("empleados/{id:int}")]
     public async Task<IActionResult> PutEmpleado(int id, [FromBody] EmpleadoUpdateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("EMPLEADOS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("EMPLEADOS", PermisoAccion.Editar, ct)) return SinPermiso("editar empleados");
         var ok = await _service.UpdateEmpleadoAsync(id, dto, ct);
-        if (!ok) return NotFound();
+        if (!ok) return NoExiste("El empleado");
         await AuditarAsync("EMPLEADO_EDITADO", "Empleado", id.ToString(), ct: ct);
         return NoContent();
     }
@@ -33,7 +33,7 @@ public class EmpleadoApiController : BaseSpaApiController
     public async Task<IActionResult> PutEmpleadoYo([FromBody] EmpleadoSelfUpdateDto dto, CancellationToken ct)
     {
         var empId = await _service.GetEmpleadoIdByUsuarioIdAsync(UsuarioOperador(), ct);
-        if (empId == null) return NotFound();
+        if (empId == null) return NoExiste("La ficha de empleado");
         var ok = await _service.UpdateEmpleadoSelfAsync(empId.Value, dto, ct);
         return ok ? NoContent() : NotFound();
     }

@@ -1,4 +1,4 @@
-﻿/* SGE Punto Fresco - split module */
+/* SGE Punto Fresco - split module */
 'use strict';
 
 SGE.Router.register('empleados', () => `
@@ -257,7 +257,7 @@ SGE.Emp = {
             });
             SGE.Toast.show(activo ? 'Empleado activado' : 'Empleado desactivado');
         } catch (e) {
-            SGE.Toast.show(e.message || 'Error', 'error');
+            SGE.Toast.show(e.message || 'No fue posible cambiar el estado del empleado.', 'error');
         }
     },
     view: (id) => {
@@ -314,24 +314,28 @@ SGE.Emp = {
         const nombre = document.getElementById('emp-nombre')?.value.trim();
         const ident = document.getElementById('emp-id')?.value.trim();
         const puesto = document.getElementById('emp-puesto')?.value.trim();
-        if (!nombre || !ident || !puesto || !areaId) {
-            SGE.Toast.show('Complete nombre, identificación, puesto y área', 'error'); return;
-        }
-        if (!SGE.Validate.identificacion(ident)) {
-            SGE.Toast.show('La identificación debe tener entre 9 y 12 dígitos', 'error'); return;
-        }
         const empTel = document.getElementById('emp-tel')?.value;
-        if (!SGE.Validate.telefono(empTel)) {
-            SGE.Toast.show('El teléfono no es válido', 'error'); return;
-        }
         const empMail = document.getElementById('emp-email')?.value?.trim();
-        if (empMail && !SGE.Validate.email(empMail)) {
-            SGE.Toast.show('El correo no es válido', 'error'); return;
-        }
         const empEmergTel = document.getElementById('emp-emerg-tel')?.value?.trim();
-        if (empEmergTel && !SGE.Validate.telefono(empEmergTel)) {
-            SGE.Toast.show('El teléfono de emergencia no es válido', 'error'); return;
-        }
+
+        if (!SGE.FormErrors.validar('modal-empleado', [
+            { campo: 'emp-nombre', valido: !!nombre, mensaje: 'El nombre completo es obligatorio.' },
+            { campo: 'emp-nombre', valido: !nombre || nombre.length >= 3,
+              mensaje: 'El nombre completo debe tener al menos 3 caracteres.' },
+            { campo: 'emp-id', valido: !!ident, mensaje: 'La identificación es obligatoria.' },
+            { campo: 'emp-id', valido: !ident || /^[\d\s-]+$/.test(ident),
+              mensaje: 'La identificación solo admite números y guiones.' },
+            { campo: 'emp-id', valido: !ident || SGE.Validate.identificacion(ident),
+              mensaje: `La identificación debe tener entre 9 y 12 dígitos (tiene ${(ident.match(/\d/g) || []).length}).` },
+            { campo: 'emp-puesto', valido: !!puesto, mensaje: 'El puesto es obligatorio.' },
+            { campo: 'emp-area', valido: areaId > 0, mensaje: 'Debe seleccionar el área a la que pertenece.' },
+            { campo: 'emp-tel', valido: SGE.Validate.telefono(empTel),
+              mensaje: 'El teléfono debe tener entre 8 y 15 dígitos.' },
+            { campo: 'emp-email', valido: !empMail || SGE.Validate.email(empMail),
+              mensaje: 'El correo no tiene un formato válido (ejemplo: nombre@puntofresco.cr).' },
+            { campo: 'emp-emerg-tel', valido: !empEmergTel || SGE.Validate.telefono(empEmergTel),
+              mensaje: 'El teléfono de emergencia debe tener entre 8 y 15 dígitos.' }
+        ])) return;
         const body = {
             areaId,
             nombreCompleto: nombre,
@@ -356,7 +360,7 @@ SGE.Emp = {
             window._empEditId = null;
             SGE.Toast.show('Empleado guardado');
         } catch (e) {
-            SGE.Toast.show(e.message || 'Error', 'error');
+            SGE.FormErrors.manejar(e, 'modal-empleado', 'No fue posible guardar el empleado.');
         }
     }
 };

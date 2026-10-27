@@ -74,6 +74,19 @@ public class NotificacionClienteDto
     /// <summary>Para marcar recordatorio como notificado (evitar alertas duplicadas).</summary>
     public int? LicitacionId { get; set; }
     public int? RecordatorioId { get; set; }
+
+    /// <summary>
+    /// Huella del contenido. Al ocultar la alerta se guarda junto al descarte;
+    /// si el registro de origen cambia, la huella deja de coincidir y la alerta
+    /// vuelve a aparecer en lugar de quedar silenciada para siempre.
+    /// </summary>
+    public string Huella { get; set; } = "";
+
+    /// <summary>Marcada como leída por este usuario (se muestra atenuada, no se oculta).</summary>
+    public bool Leida { get; set; }
+
+    /// <summary>Módulo al que pertenece la alerta, para no mostrarla a quien no puede verlo.</summary>
+    public string? ModuloCodigo { get; set; }
 }
 
 public class EmpresaClienteDto { public string NombreComercial { get; set; } = ""; public string RazonSocial { get; set; } = ""; public string CedulaJuridica { get; set; } = ""; public string Telefono1 { get; set; } = ""; public string? Telefono2 { get; set; } public string Correo { get; set; } = ""; public string? CorreoAlt { get; set; } public string Direccion { get; set; } = ""; public string? SitioWeb { get; set; } public string ImpuestoDefecto { get; set; } = "13"; }

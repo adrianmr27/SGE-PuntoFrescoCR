@@ -558,9 +558,9 @@ Este es un mensaje automático, por favor no responder a este correo.
     {
         var ident = dto.Identificacion.Trim();
         if (await _db.Clientes.AnyAsync(x => x.Identificacion == ident, ct))
-            throw new InvalidOperationException("Ya existe un cliente con esa identificación.");
+            throw new ConflictoNegocioException("Ya existe un cliente con esa identificación.", "cli-id", "IDENTIFICACION_DUPLICADA");
         if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Clientes.AnyAsync(x => x.Correo == dto.Correo, ct))
-            throw new InvalidOperationException("Ya existe un cliente con ese correo.");
+            throw new ConflictoNegocioException("Ya existe un cliente con ese correo.", "cli-email", "CORREO_DUPLICADO");
 
         var c = new Cliente
         {
@@ -584,9 +584,9 @@ Este es un mensaje automático, por favor no responder a este correo.
         if (c == null) return false;
         var ident = dto.Identificacion.Trim();
         if (await _db.Clientes.AnyAsync(x => x.Identificacion == ident && x.ClienteId != id, ct))
-            throw new InvalidOperationException("Ya existe otro cliente con esa identificación.");
+            throw new ConflictoNegocioException("Ya existe otro cliente con esa identificación.", "cli-id", "IDENTIFICACION_DUPLICADA");
         if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Clientes.AnyAsync(x => x.Correo == dto.Correo && x.ClienteId != id, ct))
-            throw new InvalidOperationException("Ya existe otro cliente con ese correo.");
+            throw new ConflictoNegocioException("Ya existe otro cliente con ese correo.", "cli-email", "CORREO_DUPLICADO");
 
         c.Nombre = dto.Nombre.Trim();
         c.Identificacion = ident;
@@ -603,9 +603,9 @@ Este es un mensaje automático, por favor no responder a este correo.
     {
         var ident = dto.Identificacion.Trim();
         if (await _db.Proveedores.AnyAsync(x => x.Identificacion == ident, ct))
-            throw new InvalidOperationException("Ya existe un proveedor con esa identificación.");
+            throw new ConflictoNegocioException("Ya existe un proveedor con esa identificación.", "prov-id", "IDENTIFICACION_DUPLICADA");
         if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Proveedores.AnyAsync(x => x.Correo == dto.Correo, ct))
-            throw new InvalidOperationException("Ya existe un proveedor con ese correo.");
+            throw new ConflictoNegocioException("Ya existe un proveedor con ese correo.", "prov-email", "CORREO_DUPLICADO");
 
         var p = new Proveedor
         {
@@ -629,9 +629,9 @@ Este es un mensaje automático, por favor no responder a este correo.
         if (p == null) return false;
         var ident = dto.Identificacion.Trim();
         if (await _db.Proveedores.AnyAsync(x => x.Identificacion == ident && x.ProveedorId != id, ct))
-            throw new InvalidOperationException("Ya existe otro proveedor con esa identificación.");
+            throw new ConflictoNegocioException("Ya existe otro proveedor con esa identificación.", "prov-id", "IDENTIFICACION_DUPLICADA");
         if (!string.IsNullOrWhiteSpace(dto.Correo) && await _db.Proveedores.AnyAsync(x => x.Correo == dto.Correo && x.ProveedorId != id, ct))
-            throw new InvalidOperationException("Ya existe otro proveedor con ese correo.");
+            throw new ConflictoNegocioException("Ya existe otro proveedor con ese correo.", "prov-email", "CORREO_DUPLICADO");
 
         p.Nombre = dto.Nombre.Trim();
         p.Identificacion = dto.Identificacion.Trim();
@@ -648,7 +648,7 @@ Este es un mensaje automático, por favor no responder a este correo.
     {
         var nombre = dto.Nombre.Trim();
         if (await _db.Productos.AnyAsync(x => x.CategoriaId == dto.CategoriaId && x.Nombre == nombre, ct))
-            throw new InvalidOperationException("Ya existe un producto con ese nombre en esta categoría.");
+            throw new ConflictoNegocioException("Ya existe un producto con ese nombre en esta categoría.", "prod-nombre", "NOMBRE_DUPLICADO");
 
         var p = new Producto
         {
@@ -674,7 +674,7 @@ Este es un mensaje automático, por favor no responder a este correo.
         if (string.IsNullOrWhiteSpace(dto?.Nombre)) return null;
         var nombre = dto.Nombre.Trim();
         if (await _db.Categorias.AnyAsync(c => c.Nombre == nombre, ct))
-            throw new InvalidOperationException("Ya existe una categoría con ese nombre.");
+            throw new ConflictoNegocioException("Ya existe una categoría con ese nombre.", "cat-nombre", "NOMBRE_DUPLICADO");
 
         var cat = new Categoria
         {
@@ -692,7 +692,7 @@ Este es un mensaje automático, por favor no responder a este correo.
         if (p == null) return false;
         var nombre = dto.Nombre.Trim();
         if (await _db.Productos.AnyAsync(x => x.CategoriaId == dto.CategoriaId && x.Nombre == nombre && x.ProductoId != id, ct))
-            throw new InvalidOperationException("Ya existe otro producto con ese nombre en esta categoría.");
+            throw new ConflictoNegocioException("Ya existe otro producto con ese nombre en esta categoría.", "prod-nombre", "NOMBRE_DUPLICADO");
         p.CategoriaId = dto.CategoriaId;
         p.ParametroIvaId = dto.ParametroIvaId;
         p.Nombre = nombre;

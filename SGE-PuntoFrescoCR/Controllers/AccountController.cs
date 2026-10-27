@@ -16,20 +16,35 @@ public class AccountController : Controller
     private readonly IWebHostEnvironment _env;
     private readonly IEmailNotificacionService _email;
     private readonly AuditoriaService _auditoria;
+    private readonly SesionService _sesiones;
 
-    public AccountController(AuthService auth, IWebHostEnvironment env, IEmailNotificacionService email, AuditoriaService auditoria)
+    public AccountController(AuthService auth, IWebHostEnvironment env, IEmailNotificacionService email,
+        AuditoriaService auditoria, SesionService sesiones)
     {
         _auth = auth;
         _env = env;
         _email = email;
         _auditoria = auditoria;
+        _sesiones = sesiones;
     }
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult Login(string? returnUrl = null)
+    public IActionResult Login(string? returnUrl = null, string? motivo = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
+
+        // El middleware de sesión redirige aquí con el motivo del cierre, para
+        // que la persona entienda por qué se le cayó la sesión en vez de
+        // encontrarse con una pantalla de inicio sin explicación.
+        ViewData["Aviso"] = motivo switch
+        {
+            "cuenta_desactivada" => "Su cuenta fue desactivada. Contacte al administrador.",
+            "sesion_reemplazada" => "Se inició sesión con su usuario en otro equipo, por lo que esta sesión se cerró.",
+            "sesion_invalida" => "Su sesión finalizó. Vuelva a iniciar sesión.",
+            _ => null
+        };
+
         return View();
     }
 
@@ -128,13 +143,22 @@ public class AccountController : Controller
 
     private async Task SignInUsuarioAsync(SGE_PuntoFrescoCRDAL.Entidades.Usuario u, CancellationToken ct)
     {
+        /* Sesión única por usuario.
+           AbrirSesionAsync genera un identificador nuevo y lo guarda en la base.
+           Cualquier cookie emitida antes (otro equipo, otro navegador) deja de
+           coincidir y queda invalidada; si esa otra pestaña tiene el canal de
+           eventos abierto, se cierra en el acto. */
+        var origen = Request.Headers.UserAgent.ToString();
+        var sesionToken = await _sesiones.AbrirSesionAsync(u.UsuarioId, origen, ct);
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, u.UsuarioId.ToString()),
             new(ClaimTypes.Name, u.NombreCompleto),
             new(ClaimTypes.Email, u.Correo),
             new("usuario", u.NombreUsuario),
-            new(ClaimTypes.Role, u.Rol.Nombre)
+            new(ClaimTypes.Role, u.Rol.Nombre),
+            new(SesionService.ClaimSesion, sesionToken)
         };
 
         if (u.RequiereCambioPassword)
@@ -153,6 +177,11 @@ public class AccountController : Controller
         var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var nombreUsuario = User.FindFirstValue("usuario") ?? User.Identity?.Name;
         int.TryParse(idClaim, out var usuarioId);
+
+        // Libera el token en la base: sin esto el usuario quedaría marcado como
+        // "con sesión abierta" y el próximo inicio se registraría como reemplazo.
+        if (usuarioId > 0) await _sesiones.CerrarPropiaAsync(usuarioId);
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         await _auditoria.RegistrarAsync(usuarioId > 0 ? usuarioId : null, nombreUsuario, "LOGOUT", "Usuario", idClaim);
         return RedirectToAction(nameof(Login));

@@ -22,7 +22,7 @@ public class SpaDataService
             .Select(m => new ModuloClienteDto { Id = m.ModuloId, Codigo = m.Codigo, Nombre = m.Nombre })
             .ToListAsync(ct);
 
-        dto.Notificaciones = await BuildNotificacionesAsync(ct);
+        dto.Notificaciones = await BuildNotificacionesAsync(usuarioId, ct);
         dto.Counts = await BuildDashboardCountsAsync(ct);
 
         if (usuarioId > 0)
@@ -458,12 +458,12 @@ public class SpaDataService
 
         dto.Reportes = await BuildReportesAsync(ct);
 
-        dto.Notificaciones = await BuildNotificacionesAsync(ct);
+        dto.Notificaciones = await BuildNotificacionesAsync(usuarioId, ct);
 
         return dto;
     }
 
-    private async Task<List<NotificacionClienteDto>> BuildNotificacionesAsync(CancellationToken ct)
+    private async Task<List<NotificacionClienteDto>> BuildNotificacionesAsync(int usuarioId, CancellationToken ct)
     {
         var list = new List<NotificacionClienteDto>();
         var hoy = DateTime.UtcNow.Date;
@@ -575,7 +575,94 @@ public class SpaDataService
             });
         }
 
-        return list;
+        return await PersonalizarNotificacionesAsync(list, usuarioId, ct);
+    }
+
+    /// <summary>
+    /// Módulo al que pertenece cada tipo de alerta. Sirve para no mostrarle a un
+    /// usuario alertas de un módulo que su rol no tiene permiso de ver: antes
+    /// todos recibían exactamente el mismo listado, incluidas cuentas por pagar
+    /// o licitaciones que no les correspondían.
+    /// </summary>
+    private static string? ModuloDeTipo(string tipo) => tipo switch
+    {
+        "recordatorio" => "LICITACIONES",
+        "licitacion_fecha" => "LICITACIONES",
+        "finanza_cobrar" => "FINANZAS",
+        "finanza_pagar" => "FINANZAS",
+        "inventario" => "INVENTARIO",
+        _ => null
+    };
+
+    /// <summary>
+    /// Huella corta y estable del contenido de una alerta. Si cambia el monto, la
+    /// fecha o el estado del registro de origen, cambia la huella y el descarte
+    /// anterior deja de aplicar.
+    /// </summary>
+    private static string CalcularHuella(NotificacionClienteDto n)
+    {
+        var material = string.Join('|', n.Id, n.Tipo, n.Titulo, n.Mensaje);
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(material));
+        return Convert.ToHexString(bytes)[..32];
+    }
+
+    /// <summary>
+    /// Convierte el listado global de alertas en el listado que le corresponde a
+    /// un usuario concreto: filtra por permisos de módulo y aplica los descartes
+    /// y las marcas de leído que ese usuario guardó (que ahora viven en base de
+    /// datos y no en el localStorage del navegador).
+    /// </summary>
+    private async Task<List<NotificacionClienteDto>> PersonalizarNotificacionesAsync(
+        List<NotificacionClienteDto> list, int usuarioId, CancellationToken ct)
+    {
+        foreach (var n in list)
+        {
+            n.ModuloCodigo = ModuloDeTipo(n.Tipo);
+            n.Huella = CalcularHuella(n);
+        }
+
+        if (usuarioId <= 0) return list;
+
+        // Módulos que el rol del usuario puede ver.
+        var modulosVisibles = await _db.Usuarios.AsNoTracking()
+            .Where(u => u.UsuarioId == usuarioId)
+            .SelectMany(u => _db.Permisos.AsNoTracking()
+                .Where(p => p.RolId == u.RolId && p.PuedeVer)
+                .Join(_db.Modulos.AsNoTracking(), p => p.ModuloId, m => m.ModuloId, (p, m) => m.Codigo))
+            .ToListAsync(ct);
+
+        var visibles = new HashSet<string>(modulosVisibles, StringComparer.OrdinalIgnoreCase);
+
+        // Si el usuario no tiene permisos cargados (por ejemplo, base sin configurar)
+        // no se filtra nada, para no dejar el centro de notificaciones vacío por error.
+        if (visibles.Count > 0)
+            list = list.Where(n => n.ModuloCodigo == null || visibles.Contains(n.ModuloCodigo)).ToList();
+
+        // Estado guardado por este usuario.
+        var claves = list.Select(n => n.Id).ToList();
+        var estados = await _db.NotificacionesEstado.AsNoTracking()
+            .Where(e => e.UsuarioId == usuarioId && claves.Contains(e.Clave))
+            .ToDictionaryAsync(e => e.Clave, e => e, ct);
+
+        var resultado = new List<NotificacionClienteDto>(list.Count);
+        foreach (var n in list)
+        {
+            if (!estados.TryGetValue(n.Id, out var estado))
+            {
+                resultado.Add(n);
+                continue;
+            }
+
+            // El descarte solo vale mientras el contenido siga siendo el mismo.
+            var mismaHuella = string.Equals(estado.Huella, n.Huella, StringComparison.OrdinalIgnoreCase);
+
+            if (estado.Estado == "Oculta" && mismaHuella) continue;
+
+            n.Leida = estado.Estado == "Leida" && mismaHuella;
+            resultado.Add(n);
+        }
+
+        return resultado;
     }
 
     private async Task<Dictionary<string, List<HistorialMesDto>>> BuildHistorialClientesAsync(CancellationToken ct)

@@ -12,7 +12,7 @@ public class FinanzaApiController : BaseSpaApiController
     [HttpPut("cuentas-cobrar/{id:int}/estado")]
     public async Task<IActionResult> PutCuentaCobrarEstado(int id, [FromBody] CuentaEstadoDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("FINANZAS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("FINANZAS", PermisoAccion.Editar, ct)) return SinPermiso("editar registros financieros");
         var ok = await _service.UpdateCuentaCobrarEstadoAsync(id, dto.Estado, ct);
         return ok ? NoContent() : NotFound();
     }
@@ -20,7 +20,7 @@ public class FinanzaApiController : BaseSpaApiController
     [HttpPut("cuentas-pagar/{id:int}/estado")]
     public async Task<IActionResult> PutCuentaPagarEstado(int id, [FromBody] CuentaEstadoDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("FINANZAS", PermisoAccion.Editar, ct)) return Forbid();
+        if (!await PuedeAsync("FINANZAS", PermisoAccion.Editar, ct)) return SinPermiso("editar registros financieros");
         var ok = await _service.UpdateCuentaPagarEstadoAsync(id, dto.Estado, ct);
         return ok ? NoContent() : NotFound();
     }
@@ -28,7 +28,7 @@ public class FinanzaApiController : BaseSpaApiController
     [HttpPost("movimientos-financieros")]
     public async Task<IActionResult> PostMovFin([FromBody] MovimientoFinancieroManualDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("FINANZAS", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("FINANZAS", PermisoAccion.Crear, ct)) return SinPermiso("crear registros financieros");
         await _service.AddMovimientoFinancieroManualAsync(dto, UsuarioOperador(), ct);
         return NoContent();
     }
@@ -36,7 +36,7 @@ public class FinanzaApiController : BaseSpaApiController
     [HttpPost("cuentas-cobrar")]
     public async Task<ActionResult<int>> PostCuentaCobrar([FromBody] CuentaCobrarCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("FINANZAS", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("FINANZAS", PermisoAccion.Crear, ct)) return SinPermiso("crear registros financieros");
         var id = await _service.CreateCuentaCobrarAsync(dto, UsuarioOperador(), ct);
         return id == null ? BadRequest() : Ok(id.Value);
     }
@@ -44,7 +44,7 @@ public class FinanzaApiController : BaseSpaApiController
     [HttpPost("cuentas-pagar")]
     public async Task<ActionResult<int>> PostCuentaPagar([FromBody] CuentaPagarCreateDto dto, CancellationToken ct)
     {
-        if (!await PuedeAsync("FINANZAS", PermisoAccion.Crear, ct)) return Forbid();
+        if (!await PuedeAsync("FINANZAS", PermisoAccion.Crear, ct)) return SinPermiso("crear registros financieros");
         var id = await _service.CreateCuentaPagarAsync(dto, UsuarioOperador(), ct);
         return id == null ? BadRequest() : Ok(id.Value);
     }
